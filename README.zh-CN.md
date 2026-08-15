@@ -94,12 +94,13 @@ android/   Android 应用（Java WebView、本地代理、二维码扫描、mDNS
 | --- | --- | --- |
 | Token 网关鉴权——每设备一次性令牌、每 IP 限流、首次访问本机审批、DSH 仍只监听 127.0.0.1 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) · [dsh-mobile-gate](https://github.com/Bernardxu123/dsh-mobile-gate) | **已实现**（LAN 鉴权门 + 网关） |
 | 文件传输——列目录 / 上传（2GB）/ Range 断点续传下载，防路径穿越 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | **已实现**（网关 `/fs/*`） |
-| 多服务器 + 测速自动切换（局域网 / Tailscale / WAN） | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
+| 多服务器 + 测速自动切换（局域网 / Tailscale / WAN） | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | **已实现**（设置页 + 测速） |
 | 手机端离线聊天缓存 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
 | 原生手机页面——会话 / 审批 / 提问 / goal | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
 | 自动更新——客户端更新 + 上游核心同步（失败可回滚） | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) · [hairyf Tauri](https://github.com/hairyf/deepseek-harness-desktop) · [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **已实现**（客户端更新检查） |
-| 任务完成系统通知（点击聚焦窗口） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | 计划中 |
+| 任务完成系统通知（点击聚焦窗口） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **已实现**（轮询 `session.list`） |
 | 托盘一键重启 DSH（杀进程树后重新拉起） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **已实现** |
+| 移动端体验——44px 触控目标、全宽布局、`crypto.randomUUID` polyfill、断线自动重连 | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **已实现** |
 | 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
 | PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
 | 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |

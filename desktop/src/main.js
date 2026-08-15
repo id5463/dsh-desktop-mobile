@@ -217,7 +217,8 @@ function startMDNS() {
           additionals: [
             { name: '_dsh._tcp.local', type: 'PTR', ttl: 300, data: 'dsh-desktop._dsh._tcp.local' },
             { name: 'dsh-desktop._dsh._tcp.local', type: 'SRV', ttl: 300, data: { priority: 10, weight: 0, port, target: 'dsh-desktop.local' } },
-            { name: 'dsh-desktop._dsh._tcp.local', type: 'TXT', ttl: 300, data: Buffer.from(`name=${name}`) },
+            // TXT 携带名称 + 访问令牌: 手机 mDNS 自动发现后可直接通过鉴权门
+            { name: 'dsh-desktop._dsh._tcp.local', type: 'TXT', ttl: 300, data: [Buffer.from('name=' + name), Buffer.from('token=' + gatewayToken())] },
           ],
         })
       } catch(e) {}
@@ -597,9 +598,9 @@ async function setupRemoteAccess() {
   if (publicIp) {
     console.log(`DSH Desktop: 公网 IP ${publicIp}:${port}${upnpOk ? '（UPnP 已开端口，手机可直连）' : '（UPnP 不可用）'}`)
   }
-  // 把公网 IP 通知桥接，随 offer 发布给手机
+  // 把公网 IP + 访问令牌通知桥接，随 offer 发布给手机
   if (p2pBridge && !p2pBridge.isDestroyed()) {
-    p2pBridge.webContents.send('p2p-public-ip', { publicIp, port, upnpOk })
+    p2pBridge.webContents.send('p2p-public-ip', { publicIp, port, upnpOk, token: gatewayToken() })
   }
 }
 
@@ -803,6 +804,70 @@ function checkForUpdates(silent) {
   req.on('timeout', () => { try { req.destroy() } catch (e) {} })
 }
 
+// ====== 任务完成通知 (轮询 DSH session.list, 参考 dsh-desktop-windowos / EAC) ======
+
+let notifiedSessions = new Set()
+let runningSessions = new Map() // sessionId -> { title, startedAt }
+
+function pollSessionStatus() {
+  const port = store.get('port')
+  const payload = JSON.stringify({
+    type: 'client-request', rpcId: 'dsh-notify-' + Date.now(), method: 'session.list', payload: {},
+  })
+  const req = http.request({
+    hostname: '127.0.0.1', port, path: '/api/session.list', method: 'POST',
+    headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(payload) },
+    timeout: 4000,
+  }, (res) => {
+    let d = ''
+    res.on('data', (c) => { d += c; if (d.length > 1024 * 1024) res.destroy() })
+    res.on('end', () => {
+      try {
+        const data = JSON.parse(d)
+        const items = data?.result?.value?.items || []
+        const nowRunning = new Set()
+        for (const it of items) {
+          if (!it.running) continue
+          nowRunning.add(it.sessionId)
+          if (!runningSessions.has(it.sessionId)) {
+            runningSessions.set(it.sessionId, {
+              title: it.projections?.values?.title || it.cwd || 'DSH 会话',
+              startedAt: Date.now(),
+            })
+          }
+        }
+        // 刚结束的会话 -> 系统通知 (运行不足 5 秒的忽略, 防误报)
+        for (const [sid, info] of runningSessions) {
+          if (!nowRunning.has(sid)) {
+            runningSessions.delete(sid)
+            if (!notifiedSessions.has(sid) && Date.now() - info.startedAt > 5000) {
+              notifiedSessions.add(sid)
+              notifyTaskDone(info.title)
+            }
+          }
+        }
+        // 会话再次运行 -> 重置已通知标记
+        for (const sid of notifiedSessions) if (nowRunning.has(sid)) notifiedSessions.delete(sid)
+      } catch (e) { /* 解析失败静默 */ }
+    })
+  })
+  req.on('error', () => { /* DSH 未运行/重启中: 静默 */ })
+  req.on('timeout', () => { try { req.destroy() } catch (e) {} })
+  req.end(payload)
+}
+
+function notifyTaskDone(title) {
+  try {
+    const { Notification } = require('electron')
+    const n = new Notification({
+      title: t('notify_done_title'),
+      body: title + ' ' + t('notify_done_body'),
+    })
+    n.on('click', () => { if (mainWindow) { mainWindow.show(); mainWindow.focus() } })
+    n.show()
+  } catch (e) { /* 通知不可用时静默 */ }
+}
+
 // ====== 窗口管理 ======
 
 function createConnectionWindow() {
@@ -993,6 +1058,9 @@ app.whenReady().then(async () => {
   // 自动更新检查: 启动 10 秒后首查, 之后每 6 小时一次
   setTimeout(() => checkForUpdates(true), 10000)
   setInterval(() => checkForUpdates(true), 6 * 3600 * 1000)
+
+  // 任务完成通知: 每 2.5 秒轮询会话状态
+  setInterval(pollSessionStatus, 2500)
 
   // 启动 mDNS 服务发现（手机自动发现桌面端）
   startMDNS()

@@ -94,12 +94,13 @@ We benchmarked the DSH desktop & mobile ecosystem and are adopting the best feat
 | --- | --- | --- |
 | Token gateway auth — per-device one-time token, per-IP rate limiting, first-visit approval, DSH stays on 127.0.0.1 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) · [dsh-mobile-gate](https://github.com/Bernardxu123/dsh-mobile-gate) | **shipped** (LAN gate + gateway) |
 | File transfer — list / upload (2 GB) / download with Range resume, path-traversal protection | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | **shipped** (gateway `/fs/*`) |
-| Multi-server with speed-test auto-switch (LAN / Tailscale / WAN) | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
+| Multi-server with speed-test auto-switch (LAN / Tailscale / WAN) | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | **shipped** (settings + speed test) |
 | Offline chat cache on the phone | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
 | Native mobile pages — sessions / approvals / questions / goals | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
 | Auto-update — client updates + upstream core sync with rollback | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) · [hairyf Tauri](https://github.com/hairyf/deepseek-harness-desktop) · [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** (client update check) |
-| Task-complete system notification (click to focus window) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | planned |
+| Task-complete system notification (click to focus window) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** (polls `session.list`) |
 | Tray one-click restart of DSH (kill process tree + relaunch) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** |
+| Mobile UI polish — 44px touch targets, full-width layout, `crypto.randomUUID` polyfill, auto-reconnect on network drop | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **shipped** |
 | Security hardening — random loopback port, sandbox, navigation restrictions | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | planned |
 | PWA mode — add-to-home-screen, offline shell, Web Push notifications, touch gestures | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | planned |
 | `crypto.randomUUID` polyfill for plain-HTTP origins (LAN) | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | planned |

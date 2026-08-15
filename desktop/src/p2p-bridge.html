@@ -34,7 +34,7 @@ let remoteInfo = null // { publicIp, port, upnpOk }
 
 function publishOffer() {
   if (!lastOffer) return
-  // 附上公网 IP + UPnP 状态，手机可优先直连（免 WebRTC）
+  // 附上公网 IP + UPnP 状态 + 访问令牌，手机可优先直连（免 WebRTC，且能通过鉴权门）
   let msg = lastOffer
   if (remoteInfo && remoteInfo.publicIp) {
     try {
@@ -42,6 +42,7 @@ function publishOffer() {
       obj.publicIp = remoteInfo.publicIp
       obj.port = remoteInfo.port
       obj.upnpOk = !!remoteInfo.upnpOk
+      if (remoteInfo.token) obj.token = remoteInfo.token
       msg = JSON.stringify(obj)
     } catch (e) {}
   }

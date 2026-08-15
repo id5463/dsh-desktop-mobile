@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<script src="mqtt.min.js"></script>
+<script src="simplepeer.min.js"></script>
+</head><body><script>
+// 手机端 P2P 桥接：MQTT 信令 + WebRTC 数据通道
+// Java 通过 P2PBridge JavascriptInterface 与本页面通信
+var peer = null;
+var mqttClient = null;
+var connected = false;
+
+function connectToDesktop(desktopPeerId) {
+  var MQTT_URL = 'wss://broker.emqx.io:8084/mqtt';
+  var TOPIC_SIGNAL = 'dsh/signal/' + desktopPeerId;
+  var TOPIC_ANSWER = 'dsh/signal/' + desktopPeerId + '/answer';
+  var TOPIC_REQUEST = 'dsh/request/' + desktopPeerId;
+
+  mqttClient = mqtt.connect(MQTT_URL);
+
+  mqttClient.on('connect', function() {
+    P2PBridge.onPeerReady(desktopPeerId);
+    mqttClient.subscribe(TOPIC_SIGNAL);
+
+    // 发布连接请求：让桌面端进入应答状态（1 分钟窗口，每 5 秒发 offer）
+    mqttClient.publish(TOPIC_REQUEST, JSON.stringify({ type: 'request', from: 'phone' }));
+    P2PBridge.onError('已发出连接请求，等待桌面端应答…');
+  });
+
+  mqttClient.on('message', function(topic, message) {
+    if (topic === TOPIC_SIGNAL) {
+      try {
+        var msg = JSON.parse(message.toString());
+        // 桌面端 UPnP 已开公网端口 → 通知 Java 直连（免 WebRTC），带访问令牌过鉴权门
+        if (msg.publicIp && msg.upnpOk) {
+          P2PBridge.onPublicIp(msg.publicIp, msg.port || 3080, msg.token || '');
+          return;
+        }
+        if (msg.type === 'offer') {
+          peer = new SimplePeer({
+            initiator: false,
+            trickle: false,
+            config: {
+              iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:openrelay.metered.ca:80' },
+                // 免费 TURN（无需注册）：解决对称 NAT（4G）打洞失败
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+              ]
+            }
+          });
+          peer.on('signal', function(answerData) {
+            mqttClient.publish(TOPIC_ANSWER, JSON.stringify({ type: 'answer', data: answerData }));
+          });
+          peer.on('connect', function() {
+            connected = true;
+            P2PBridge.onConnected();
+          });
+          peer.on('data', function(data) {
+            try {
+              var r = JSON.parse(data.toString());
+              if (r.type === 'http-response') {
+                P2PBridge.onHttpResponse(r.requestId, JSON.stringify(r));
+              }
+            } catch (e) {}
+          });
+          peer.on('error', function(e) { P2PBridge.onError(e.message); });
+          peer.on('close', function() { connected = false; });
+          peer.signal(msg.data);
+        }
+      } catch (e) { P2PBridge.onError('解析失败: ' + e.message); }
+    }
+  });
+
+  mqttClient.on('error', function(e) { P2PBridge.onError('MQTT: ' + e.message); });
+  mqttClient.on('offline', function() { P2PBridge.onError('MQTT 离线'); });
+}
+
+// Java 调用：把 HTTP 请求发给桌面端
+window.sendHttpRequest = function(method, path, body, reqId) {
+  if (!peer || !connected) return;
+  try {
+    peer.send(JSON.stringify({
+      type: 'http-request',
+      requestId: reqId,
+      method: method,
+      path: path,
+      headers: {},
+      body: body || ''
+    }));
+  } catch (e) {
+    P2PBridge.onError('发送失败: ' + e.message);
+  }
+};
+</script></body></html>

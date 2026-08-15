@@ -42,6 +42,10 @@ const locales = {
     update_go: '前往下载',
     update_later: '稍后',
 
+    // 任务完成通知
+    notify_done_title: 'DSH 任务完成',
+    notify_done_body: '已完成，点击查看',
+
     // 连接窗口
     conn_title: '远程连接',
     conn_subtitle: '在 DSH Mobile App 中输入连接码，或扫描二维码',
@@ -117,6 +121,9 @@ const locales = {
     update_detail: 'Open GitHub to view and download the new version?',
     update_go: 'Download',
     update_later: 'Later',
+
+    notify_done_title: 'DSH task complete',
+    notify_done_body: 'finished — click to view',
 
     conn_title: 'Remote Connection',
     conn_subtitle: 'Enter the connection code in DSH Mobile app, or scan the QR code',
