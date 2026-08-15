@@ -1,0 +1,13 @@
+node_modules/
+dist/
+out/
+build/
+*.log
+*.err
+.DS_Store
+.idea/
+*.iml
+local.properties
+gradle-8.12-bin.zip
+*.apk
+!android/dist/dsh-mobile-debug.apk

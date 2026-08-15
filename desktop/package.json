@@ -1,0 +1,39 @@
+{
+    "name":  "dsh-desktop",
+    "version":  "1.0.0",
+    "description":  "DeepSeek Harness Desktop GUI - Native Electron wrapper for DSH Web UI",
+    "main":  "src/main.js",
+    "scripts":  {
+                    "start":  "electron .",
+                    "build:win":  "electron-builder --win --x64",
+                    "build:linux":  "electron-builder --linux",
+                    "build:mac":  "electron-builder --mac",
+                    "dist":  "electron-builder --win --x64 --config build.config.json"
+                },
+    "build":  {
+                  "appId":  "com.deepseek.dsh-desktop",
+                  "productName":  "DSH Desktop",
+                  "directories":  {
+                                      "output":  "dist"
+                                  },
+                  "files":  [
+                                "src/**/*",
+                                "package.json"
+                            ],
+                  "win":  {
+                              "target":  "nsis",
+                              "icon":  "assets/icon.png"
+                          },
+                  "nsis":  {
+                               "oneClick":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "createDesktopShortcut":  true
+                           }
+              },
+    "keywords":  [
+
+                 ],
+    "author":  "",
+    "license":  "ISC",
+    "type":  "commonjs"
+}

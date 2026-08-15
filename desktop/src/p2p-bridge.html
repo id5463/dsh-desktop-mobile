@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+console.log('P2P: bridge script starting')
+window.onerror = function (msg, src, line) {
+  console.error('P2P: window error:', msg, src, line)
+  try { require('electron').ipcRenderer.send('p2p-error', String(msg)) } catch (e) {}
+}
+// P2P 桥接 - 通过 MQTT (EMQX 公共 broker) 交换信令
+const { ipcRenderer } = require('electron')
+const SimplePeer = require('simple-peer')
+
+// Node 版 mqtt（渲染进程 nodeIntegration 下可用；浏览器版 require 后无 .connect）
+const mqtt = require('mqtt')
+
+const peerId = 'dsh-' + Math.random().toString(36).substring(2, 6).toUpperCase()
+const MQTT_URL = 'wss://broker.emqx.io:8084/mqtt'
+const TOPIC_SIGNAL = 'dsh/signal/' + peerId
+const TOPIC_ANSWER = 'dsh/signal/' + peerId + '/answer'
+const TOPIC_REQUEST = 'dsh/request/' + peerId
+
+// 应答状态：手机发请求后进入，1 分钟窗口内每 5 秒发一次 offer
+const RESPOND_WINDOW_MS = 60000
+const RESPOND_INTERVAL_MS = 5000
+
+let peer = null
+let mqttClient = null
+let connected = false
+let lastOffer = null
+let responding = false
+let respondTimer = null
+let respondInterval = null
+let remoteInfo = null // { publicIp, port, upnpOk }
+
+function publishOffer() {
+  if (!lastOffer) return
+  // 附上公网 IP + UPnP 状态，手机可优先直连（免 WebRTC）
+  let msg = lastOffer
+  if (remoteInfo && remoteInfo.publicIp) {
+    try {
+      const obj = JSON.parse(lastOffer)
+      obj.publicIp = remoteInfo.publicIp
+      obj.port = remoteInfo.port
+      obj.upnpOk = !!remoteInfo.upnpOk
+      msg = JSON.stringify(obj)
+    } catch (e) {}
+  }
+  mqttClient.publish(TOPIC_SIGNAL, msg, { retain: true }, () => {})
+  console.log('P2P: Offer published (respond window)')
+}
+
+function startResponding() {
+  responding = true
+  publishOffer()
+  if (!respondInterval) {
+    respondInterval = setInterval(() => {
+      if (!responding || connected) return
+      publishOffer()
+    }, RESPOND_INTERVAL_MS)
+  }
+  // 窗口 1 分钟，每次请求刷新
+  clearTimeout(respondTimer)
+  respondTimer = setTimeout(stopResponding, RESPOND_WINDOW_MS)
+  console.log('P2P: 进入应答状态（1 分钟内每 5 秒应答）')
+}
+
+function stopResponding() {
+  responding = false
+  clearInterval(respondInterval); respondInterval = null
+  clearTimeout(respondTimer); respondTimer = null
+  console.log('P2P: 退出应答状态')
+}
+
+function init() {
+  console.log('P2P: Connecting to MQTT broker...')
+  mqttClient = mqtt.connect(MQTT_URL)
+
+  mqttClient.on('connect', () => {
+    console.log('P2P: MQTT connected, peer ID:', peerId)
+
+    // 订阅 answer（等手机回复）+ request（手机发起连接）
+    mqttClient.subscribe([TOPIC_ANSWER, TOPIC_REQUEST], (err) => {
+      if (err) { console.error('P2P: Subscribe error:', err); return }
+      console.log('P2P: Subscribed to', TOPIC_ANSWER, '+', TOPIC_REQUEST)
+      ipcRenderer.send('p2p-ready', peerId)
+    })
+
+    // 创建 simple-peer 发起方
+    peer = new SimplePeer({
+      initiator: true,
+      trickle: false,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:openrelay.metered.ca:80' },
+          // 免费 TURN（无需注册）：解决对称 NAT（手机 4G）打洞失败
+          { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+          { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+        ],
+      },
+    })
+
+    // 生成 offer 但先不发布，等手机请求才进入应答状态
+    peer.on('signal', (data) => {
+      lastOffer = JSON.stringify({ type: 'offer', data: data })
+      console.log('P2P: Offer ready (等待手机请求)')
+    })
+
+    peer.on('connect', () => {
+      console.log('P2P: Connected!')
+      connected = true
+      stopResponding()
+      ipcRenderer.send('p2p-connection', { peerId, type: 'incoming' })
+    })
+
+    peer.on('data', (data) => {
+      try {
+        const msg = JSON.parse(data.toString())
+        if (msg.type === 'http-request') {
+          ipcRenderer.send('p2p-http-request', {
+            requestId: msg.requestId, method: msg.method,
+            path: msg.path, headers: msg.headers, body: msg.body,
+          })
+        }
+      } catch (e) { console.error('P2P: Invalid message:', e) }
+    })
+
+    peer.on('error', (err) => {
+      console.error('P2P: Error:', err.message)
+      ipcRenderer.send('p2p-error', err.message)
+    })
+
+    peer.on('close', () => {
+      console.log('P2P: Closed')
+      connected = false
+      ipcRenderer.send('p2p-disconnected', peerId)
+    })
+  })
+
+  // 收到 MQTT 消息
+  mqttClient.on('message', (topic, message) => {
+    if (topic === TOPIC_ANSWER) {
+      try {
+        const msg = JSON.parse(message.toString())
+        if (msg.type === 'answer' && peer) {
+          peer.signal(msg.data)
+          console.log('P2P: Answer received')
+        }
+      } catch (e) { console.error('P2P: Invalid answer:', e) }
+    } else if (topic === TOPIC_REQUEST) {
+      // 手机请求连接 → 进入应答状态（1 分钟窗口，每 5 秒发一次）
+      console.log('P2P: 收到手机连接请求')
+      startResponding()
+    }
+  })
+
+  mqttClient.on('error', (err) => {
+    console.error('P2P: MQTT error:', err.message)
+    ipcRenderer.send('p2p-error', 'MQTT: ' + err.message)
+  })
+}
+
+// 接收 HTTP 响应并发送回手机
+ipcRenderer.on('p2p-http-response', (event, { requestId, status, headers, body }) => {
+  if (peer && connected) {
+    peer.send(JSON.stringify({ type: 'http-response', requestId, status, headers, body }))
+  }
+})
+
+// 接收公网 IP + UPnP 状态
+ipcRenderer.on('p2p-public-ip', (event, info) => {
+  remoteInfo = info
+  console.log('P2P: 收到公网信息', JSON.stringify(info))
+  // 立即重发一次 offer，带上公网 IP
+  if (responding) publishOffer()
+})
+
+init()
+</script></body></html>

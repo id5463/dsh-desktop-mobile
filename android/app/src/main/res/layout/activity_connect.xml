@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1a1a2e">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="DSH Mobile"
+            android:textSize="28sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="连接到桌面端"
+            android:textSize="14sp"
+            android:textColor="#a0a0b0"
+            android:layout_marginBottom="24dp" />
+
+        <!-- ===== 远程连接（连接码） ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#16213e"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📡 远程连接（连接码）"
+                android:textSize="14sp"
+                android:textColor="#1a73e8"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/code_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="输入连接码（如 5V3A）"
+                android:inputType="text"
+                android:textSize="16sp"
+                android:textColor="#e0e0e0"
+                android:textColorHint="#555"
+                android:background="#0f3460"
+                android:padding="8dp"
+                android:gravity="center"
+                android:letterSpacing="0.1" />
+
+            <Button
+                android:id="@+id/remote_connect_button"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="远程连接"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:background="#1a73e8" />
+        </LinearLayout>
+
+        <!-- ===== 局域网连接（IP） ===== -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#16213e"
+            android:padding="16dp"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏠 局域网连接（IP）"
+                android:textSize="14sp"
+                android:textColor="#00BFA5"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/lan_host_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="IP地址"
+                android:inputType="text"
+                android:textSize="16sp"
+                android:textColor="#e0e0e0"
+                android:textColorHint="#555"
+                android:background="#0f3460"
+                android:padding="8dp"
+                android:gravity="center" />
+
+            <EditText
+                android:id="@+id/lan_port_input"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:hint="端口"
+                android:inputType="number"
+                android:textSize="16sp"
+                android:textColor="#e0e0e0"
+                android:textColorHint="#555"
+                android:background="#0f3460"
+                android:padding="8dp"
+                android:gravity="center"
+                android:text="3080" />
+
+            <Button
+                android:id="@+id/lan_connect_button"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:text="局域网连接"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:background="#00BFA5" />
+        </LinearLayout>
+
+        <!-- ===== 扫码 ===== -->
+        <Button
+            android:id="@+id/scan_qr_button"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:text="📷 扫描二维码"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:background="#0f3460" />
+
+        <Button
+            android:id="@+id/auto_discover_button"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="🔍 自动发现（局域网）"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:background="#3a3f5c" />
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#a0a0b0"
+            android:gravity="center" />
+    </LinearLayout>
+</ScrollView>
