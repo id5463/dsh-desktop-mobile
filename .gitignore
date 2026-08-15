@@ -1,5 +1,5 @@
 node_modules/
-dist/
+/desktop/dist/
 out/
 build/
 *.log
