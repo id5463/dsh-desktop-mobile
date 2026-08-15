@@ -92,14 +92,14 @@ We benchmarked the DSH desktop & mobile ecosystem and are adopting the best feat
 
 | Feature | Source (MIT unless noted) | Status |
 | --- | --- | --- |
-| Token gateway auth — per-device one-time token, per-IP rate limiting, first-visit approval, DSH stays on 127.0.0.1 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) · [dsh-mobile-gate](https://github.com/Bernardxu123/dsh-mobile-gate) | planned |
-| File transfer — list / upload (2 GB) / download with Range resume, path-traversal protection | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
+| Token gateway auth — per-device one-time token, per-IP rate limiting, first-visit approval, DSH stays on 127.0.0.1 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) · [dsh-mobile-gate](https://github.com/Bernardxu123/dsh-mobile-gate) | **shipped** (LAN gate + gateway) |
+| File transfer — list / upload (2 GB) / download with Range resume, path-traversal protection | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | **shipped** (gateway `/fs/*`) |
 | Multi-server with speed-test auto-switch (LAN / Tailscale / WAN) | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
 | Offline chat cache on the phone | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
 | Native mobile pages — sessions / approvals / questions / goals | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | planned |
-| Auto-update — client updates + upstream core sync with rollback | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) · [hairyf Tauri](https://github.com/hairyf/deepseek-harness-desktop) · [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | planned |
+| Auto-update — client updates + upstream core sync with rollback | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) · [hairyf Tauri](https://github.com/hairyf/deepseek-harness-desktop) · [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** (client update check) |
 | Task-complete system notification (click to focus window) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | planned |
-| Tray one-click restart of DSH (kill process tree + relaunch) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | planned |
+| Tray one-click restart of DSH (kill process tree + relaunch) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** |
 | Security hardening — random loopback port, sandbox, navigation restrictions | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | planned |
 | PWA mode — add-to-home-screen, offline shell, Web Push notifications, touch gestures | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | planned |
 | `crypto.randomUUID` polyfill for plain-HTTP origins (LAN) | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | planned |

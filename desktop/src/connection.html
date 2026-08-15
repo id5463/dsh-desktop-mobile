@@ -47,6 +47,9 @@
       <dd id="lanUrl">---</dd>
       <dt>🔗 <span id="p2pLabel">P2P 连接码</span></dt>
       <dd><b id="peerCode2">---</b></dd>
+      <dt>🛡️ <span id="gwLabel">安全网关（文件传输 / 管理）</span></dt>
+      <dd id="gwUrl">---</dd>
+      <dd id="gwToken" style="font-family:monospace;font-size:11px;color:#81c784">---</dd>
       <dt>📱 <span id="devicesLabel">已连接设备</span></dt>
       <dd id="phoneCount">0 台</dd>
     </div>
@@ -68,11 +71,20 @@
     const lanUrl = params.get('lanUrl') || '---'
     document.getElementById('lanUrl').textContent = lanUrl
 
+    // 安全网关信息 (集成 dsh-Remote): 手机浏览器可访问文件传输/管理页
+    const gwUrl = params.get('gatewayUrl') || ''
+    const gwToken = params.get('gatewayToken') || ''
+    if (gwUrl) {
+      document.getElementById('gwUrl').textContent = gwUrl + '/fs/list?token=' + gwToken
+      document.getElementById('gwToken').textContent = 'Token: ' + gwToken
+      document.getElementById('gwUrl').title = gwUrl + '/admin' + '?token=' + gwToken
+    }
+
     const lang = params.get('lang') || 'zh'
 
-    // 在页面内生成二维码
+    // 在页面内生成二维码 (携带 token, 手机扫码后直接通过鉴权门)
     const qrContainer = document.getElementById('qrImage')
-    const qrData = JSON.stringify({ peerId: params.get('peerId'), url: lanUrl })
+    const qrData = JSON.stringify({ peerId: params.get('peerId'), url: lanUrl, token: gwToken })
     QRCode.toDataURL(qrData, { width: 200, margin: 2, color: { dark: '#1a73e8', light: '#ffffff' } })
       .then(function(url) {
         qrContainer.src = url
@@ -80,8 +92,8 @@
       })
       .catch(function() { qrContainer.style.display = 'none' })
     const texts = {
-      zh: { title: '远程连接', subtitle: '在 DSH Mobile App 中输入连接码，或扫描二维码', codeHint: '在手机上输入此连接码', qrHint: '或用手机扫描二维码', lan: '局域网连接', p2p: 'P2P 连接码', devices: '已连接设备', waiting: '等待手机连接…', connected: '已连接', unit: '台' },
-      en: { title: 'Remote Connection', subtitle: 'Enter the connection code in DSH Mobile app, or scan the QR code', codeHint: 'Enter this code on your phone', qrHint: 'Or scan the QR code with your phone', lan: 'LAN Connection', p2p: 'P2P Connection Code', devices: 'Connected Devices', waiting: 'Waiting for phone connection…', connected: 'Connected', unit: 'device(s)' },
+      zh: { title: '远程连接', subtitle: '在 DSH Mobile App 中输入连接码，或扫描二维码', codeHint: '在手机上输入此连接码', qrHint: '或用手机扫描二维码', lan: '局域网连接', p2p: 'P2P 连接码', gw: '安全网关（文件传输 / 管理）', devices: '已连接设备', waiting: '等待手机连接…', connected: '已连接', unit: '台' },
+      en: { title: 'Remote Connection', subtitle: 'Enter the connection code in DSH Mobile app, or scan the QR code', codeHint: 'Enter this code on your phone', qrHint: 'Or scan the QR code with your phone', lan: 'LAN Connection', p2p: 'P2P Connection Code', gw: 'Secure Gateway (files / admin)', devices: 'Connected Devices', waiting: 'Waiting for phone connection…', connected: 'Connected', unit: 'device(s)' },
     }
     const tx = texts[lang] || texts.zh
     document.getElementById('connTitle').textContent = tx.title
@@ -90,6 +102,7 @@
     document.getElementById('qrHint').textContent = tx.qrHint
     document.getElementById('lanLabel').textContent = tx.lan
     document.getElementById('p2pLabel').textContent = tx.p2p
+    document.getElementById('gwLabel').textContent = tx.gw
     document.getElementById('devicesLabel').textContent = tx.devices
     document.getElementById('waitingLabel').textContent = tx.waiting
 

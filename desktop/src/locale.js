@@ -33,7 +33,14 @@ const locales = {
     // 系统托盘
     tray_show: '显示窗口',
     tray_remote: '远程连接...',
+    tray_restart: '重启 DSH 服务器',
     tray_quit: '退出',
+
+    // 自动更新
+    update_available: '发现新版本',
+    update_detail: '是否前往 GitHub 查看并下载新版本？',
+    update_go: '前往下载',
+    update_later: '稍后',
 
     // 连接窗口
     conn_title: '远程连接',
@@ -103,7 +110,13 @@ const locales = {
 
     tray_show: 'Show Window',
     tray_remote: 'Remote Connection...',
+    tray_restart: 'Restart DSH Server',
     tray_quit: 'Quit',
+
+    update_available: 'Update available',
+    update_detail: 'Open GitHub to view and download the new version?',
+    update_go: 'Download',
+    update_later: 'Later',
 
     conn_title: 'Remote Connection',
     conn_subtitle: 'Enter the connection code in DSH Mobile app, or scan the QR code',

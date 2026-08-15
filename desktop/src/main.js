@@ -7,6 +7,12 @@ const dgram = require('dgram')
 const Store = require('electron-store')
 const QRCode = require('qrcode')
 const { locales, defaultLocale } = require('./locale.js')
+const { createGate } = require('./lan-gate.js')
+
+// 社区功能集成 (MIT): dsh-Remote 网关 (Blank-not-black/dsh-Remote)
+const REMOTE_GATEWAY = path.join(__dirname, 'gateway', 'gateway.js')
+// 自动更新来源: 本产品公开仓库
+const UPDATE_REPO = 'id5463/dsh-desktop-mobile'
 
 const store = new Store({
   defaults: {
@@ -15,6 +21,9 @@ const store = new Store({
     windowBounds: { width: 1200, height: 800 },
     autoStartDsh: true,
     peerId: 'dsh-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+    // 远程访问令牌: LAN 网关 / 手机直连鉴权用 (随机, 连接窗口可见)
+    remoteToken: 'tk-' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10),
+    gatewayPort: 8787,
     lang: defaultLocale,
   },
 })
@@ -278,34 +287,61 @@ function startLanProxy() {
     const targetPort = store.get('port')
 
     const http = require('http')
+    // 局域网/公网访问鉴权: 首次访问需连接码或令牌 (集成 dsh-mobile-gate / dsh-Remote 思路, MIT)
+    const gate = createGate({
+      getSecrets: () => [gatewayToken(), String(store.get('peerId')).replace(/^dsh-/i, ''), String(store.get('peerId'))],
+      cookieName: 'dsh_gate',
+    })
     const server = http.createServer((req, res) => {
-      // 把所有暴露局域网 IP 的头都改写成 127.0.0.1，让 DSH 信任检查放行
-      const headers = { ...req.headers }
-      headers.host = '127.0.0.1:' + targetPort
-      if (headers.origin) headers.origin = headers.origin.replace(/^https?:\/\/[^/]+/, 'http://127.0.0.1:' + targetPort)
-      if (headers.referer) headers.referer = headers.referer.replace(/^https?:\/\/[^/]+/, 'http://127.0.0.1:' + targetPort)
-      const options = {
-        hostname: '127.0.0.1',
-        port: targetPort,
-        path: req.url,
-        method: req.method,
-        headers,
+      try {
+        const url = new URL(req.url, 'http://dsh.local')
+        const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, '')
+        if (gate.handle(req, res, url, ip)) return // 未授权: 已应答输入页/429/提交校验
+
+        // 已授权 -> 代理到本机 DSH, 把所有暴露局域网 IP 的头都改写成 127.0.0.1, 让 DSH 信任检查放行
+        const headers = { ...req.headers }
+        headers.host = '127.0.0.1:' + targetPort
+        if (headers.origin) headers.origin = headers.origin.replace(/^https?:\/\/[^/]+/, 'http://127.0.0.1:' + targetPort)
+        if (headers.referer) headers.referer = headers.referer.replace(/^https?:\/\/[^/]+/, 'http://127.0.0.1:' + targetPort)
+        const options = {
+          hostname: '127.0.0.1',
+          port: targetPort,
+          path: gate.stripToken(req.url),
+          method: req.method,
+          headers,
+        }
+        const proxyReq = http.request(options, (proxyRes) => {
+          // 合并网关下发的 set-cookie 与上游的 set-cookie
+          const outHeaders = { ...proxyRes.headers }
+          const gateCookie = res.getHeader('set-cookie')
+          if (gateCookie) {
+            const upstreamCookie = proxyRes.headers['set-cookie']
+            outHeaders['set-cookie'] = [].concat(gateCookie, upstreamCookie || []).filter(Boolean)
+          }
+          res.writeHead(proxyRes.statusCode, outHeaders)
+          proxyRes.pipe(res)
+        })
+        proxyReq.on('error', () => { res.statusCode = 502; res.end() })
+        req.pipe(proxyReq)
+      } catch (e) {
+        console.log('DSH Desktop: LAN proxy handler error:', e.message)
+        if (!res.headersSent) { res.statusCode = 500; res.end() }
       }
-      const proxyReq = http.request(options, (proxyRes) => {
-        res.writeHead(proxyRes.statusCode, proxyRes.headers)
-        proxyRes.pipe(res)
-      })
-      proxyReq.on('error', () => { res.statusCode = 502; res.end() })
-      req.pipe(proxyReq)
     })
 
     server.on('upgrade', (req, socket, head) => {
+      const url = new URL(req.url, 'http://dsh.local')
+      if (!gate.checkUpgrade(req, url)) {
+        socket.write('HTTP/1.1 403 Forbidden\r\n\r\n')
+        socket.destroy()
+        return
+      }
       const proxySocket = require('net').connect(targetPort, '127.0.0.1', () => {
         const origin = req.headers.origin
           ? req.headers.origin.replace(/^https?:\/\/[^/]+/, 'http://127.0.0.1:' + targetPort)
           : 'http://127.0.0.1:' + targetPort
         const lines = [
-          'GET ' + req.url + ' HTTP/1.1',
+          'GET ' + gate.stripToken(req.url) + ' HTTP/1.1',
           'Host: 127.0.0.1:' + targetPort,
           'Upgrade: websocket',
           'Connection: Upgrade',
@@ -681,6 +717,92 @@ function startDshInBackground(host, port, runtime, loading) {
   })
 }
 
+// ====== DSH Remote 网关 (集成自 dsh-Remote, MIT) ======
+
+let gatewayProcess = null
+let gatewayRestartTimer = null
+let gatewayStopping = false
+
+function gatewayToken() { return store.get('remoteToken') }
+function gatewayPort() { return store.get('gatewayPort') || 8787 }
+
+/** 启动 dsh-Remote 网关子进程 (token 鉴权 + /fs/* 文件传输 + 设备管理 + 更新检查) */
+function startRemoteGateway() {
+  if (isQuitting || gatewayStopping || gatewayProcess) return
+  const upstream = 'http://127.0.0.1:' + store.get('port')
+  const env = {
+    ...process.env,
+    PORT: String(gatewayPort()),
+    HOST: '0.0.0.0',
+    DSH_UPSTREAM: upstream,
+    TOKEN: gatewayToken(),
+    DSH_REMOTE_FS_ROOT: require('os').homedir(),
+  }
+  gatewayProcess = spawn(process.execPath, [REMOTE_GATEWAY], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+  gatewayProcess.stdout.on('data', (d) => console.log('[gateway] ' + d.toString().trim()))
+  gatewayProcess.stderr.on('data', (d) => console.error('[gateway] ' + d.toString().trim()))
+  gatewayProcess.on('exit', (code) => {
+    gatewayProcess = null
+    console.log(`DSH Desktop: Remote 网关退出 (code ${code})`)
+    // 自愈: 意外退出 3 秒后自动拉起 (用户主动停止除外)
+    if (!isQuitting && !gatewayStopping) {
+      clearTimeout(gatewayRestartTimer)
+      gatewayRestartTimer = setTimeout(startRemoteGateway, 3000)
+    }
+  })
+  console.log(`DSH Desktop: Remote 网关已启动 (端口 ${gatewayPort()}, 上游 ${upstream})`)
+}
+
+function stopRemoteGateway() {
+  gatewayStopping = true
+  clearTimeout(gatewayRestartTimer)
+  if (gatewayProcess) { try { gatewayProcess.kill() } catch (e) {} gatewayProcess = null }
+}
+
+// ====== 自动更新检查 (参考 dsh-Remote / dataelement-dsh-desktop, MIT) ======
+
+const APP_VERSION = require('../package.json').version
+
+function cmpVersion(a, b) {
+  const pa = String(a || '').split('.').map(Number)
+  const pb = String(b || '').split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0)
+    if (d) return d
+  }
+  return 0
+}
+
+function checkForUpdates(silent) {
+  const req = https.get('https://api.github.com/repos/' + UPDATE_REPO + '/releases/latest', {
+    headers: { 'user-agent': 'dsh-desktop/' + APP_VERSION, accept: 'application/json' },
+    timeout: 8000,
+  }, (res) => {
+    let body = ''
+    res.on('data', (c) => { body += c; if (body.length > 512 * 1024) res.destroy() })
+    res.on('end', () => {
+      try {
+        const data = JSON.parse(body)
+        const ver = String(data.tag_name || data.name || '').replace(/^v/i, '')
+        if (ver && cmpVersion(ver, APP_VERSION) > 0) {
+          console.log(`DSH Desktop: 发现新版本 v${ver} (当前 v${APP_VERSION})`)
+          const url = data.html_url || ('https://github.com/' + UPDATE_REPO + '/releases')
+          dialog.showMessageBox(mainWindow, {
+            type: 'info', title: t('about_title'),
+            message: t('update_available') + ' v' + ver,
+            detail: t('update_detail') + '\n' + url,
+            buttons: [t('update_go'), t('update_later')],
+          }).then((r) => { if (r.response === 0) shell.openExternal(url) })
+        } else if (!silent) {
+          console.log('DSH Desktop: 已是最新版本 v' + APP_VERSION)
+        }
+      } catch (e) { /* 解析失败静默 */ }
+    })
+  })
+  req.on('error', () => { /* 无网/被墙时静默, 不影响使用 */ })
+  req.on('timeout', () => { try { req.destroy() } catch (e) {} })
+}
+
 // ====== 窗口管理 ======
 
 function createConnectionWindow() {
@@ -703,6 +825,10 @@ function createConnectionWindow() {
       peerId,
       lanUrl: localUrl,
       lang,
+      // 安全网关信息 (dsh-Remote 集成): 手机浏览器可访问 /fs/* 文件传输等
+      gatewayUrl: 'http://' + lanIp + ':' + gatewayPort(),
+      gatewayToken: gatewayToken(),
+      gatewayAdmin: 'http://127.0.0.1:' + gatewayPort() + '/admin',
     },
   })
 }
@@ -821,6 +947,7 @@ function rebuildMenu() {
     tray.setContextMenu(Menu.buildFromTemplate([
       { label: t('tray_show'), click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus() } } },
       { label: t('tray_remote'), click: () => createConnectionWindow() },
+      { label: t('tray_restart'), click: () => restartDsh() },
       { type: 'separator' },
       { label: t('tray_quit'), click: () => { isQuitting = true; app.quit() } },
     ]))
@@ -859,6 +986,13 @@ app.whenReady().then(async () => {
 
   // 启动 LAN 端口代理（让手机能连上 DSH）
   startLanProxy()
+
+  // 启动 DSH Remote 安全网关 (token 鉴权 + 文件传输, 集成自 dsh-Remote)
+  startRemoteGateway()
+
+  // 自动更新检查: 启动 10 秒后首查, 之后每 6 小时一次
+  setTimeout(() => checkForUpdates(true), 10000)
+  setInterval(() => checkForUpdates(true), 6 * 3600 * 1000)
 
   // 启动 mDNS 服务发现（手机自动发现桌面端）
   startMDNS()
@@ -903,6 +1037,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  stopRemoteGateway()
   if (dshProcess) { dshProcess.kill(); dshProcess = null }
 })
 
