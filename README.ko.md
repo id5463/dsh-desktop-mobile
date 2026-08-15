@@ -84,6 +84,7 @@ android/   Android 앱 (Java WebView, 로컬 프록시, QR 스캐너, mDNS, WebR
 - [ ] 자체 릴레이 서버 (자체 인프라를 통한 WAN 릴레이)
 - [ ] iOS 앱
 - [ ] 원격/게이트웨이 기능을 설치 가능한 `dsh` 플러그인으로 패키징 (`dsh plugin add`)
+- [ ] 커뮤니티 기능 병합 (MIT 라이선스 기능 채택) — 전체 목록은 [README.md](README.md#community-feature-merge-permissive-licenses)
 
 ## 보안
 

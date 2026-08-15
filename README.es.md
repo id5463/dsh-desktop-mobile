@@ -84,6 +84,7 @@ android/   Aplicación Android (WebView Java, proxy local, escáner QR, mDNS, We
 - [ ] Servidor de retransmisión propio (relay WAN con tu propia infraestructura)
 - [ ] Aplicación iOS
 - [ ] Empaquetar lo remoto/puerta de enlace como un plugin instalable de `dsh` (`dsh plugin add`)
+- [ ] Fusión de funciones de la comunidad (adoptar funciones con licencia MIT) — lista completa en [README.md](README.md#community-feature-merge-permissive-licenses)
 
 ## Seguridad
 

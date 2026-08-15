@@ -84,6 +84,7 @@ android/   Application Android (WebView Java, proxy local, scanner QR, mDNS, Web
 - [ ] Serveur de relais dédié (relais WAN via votre propre infrastructure)
 - [ ] Application iOS
 - [ ] Empaqueter la passerelle distante comme plugin `dsh` installable (`dsh plugin add`)
+- [ ] Fusion des fonctionnalités communautaires (adoption de fonctions sous licence MIT) — liste complète dans [README.md](README.md#community-feature-merge-permissive-licenses)
 
 ## Sécurité
 

@@ -84,6 +84,31 @@ android/   Android 应用（Java WebView、本地代理、二维码扫描、mDNS
 - [ ] 自有中继服务器（通过自己的基础设施做 WAN 中转）
 - [ ] iOS 应用
 - [ ] 把远程/网关功能打包成可安装的 `dsh` 插件（`dsh plugin add`）
+- [ ] Token 网关鉴权（见下方社区功能合并）
+
+## 社区功能合并（宽松协议）
+
+我们对 DSH 桌面端/移动端生态做了竞品普查，正在吸收 **MIT 协议**项目的最佳功能（功能层面合并并保留署名；未来任何代码级复用都会保留原项目的许可证声明）：
+
+| 功能 | 来源（除注明外均为 MIT） | 状态 |
+| --- | --- | --- |
+| Token 网关鉴权——每设备一次性令牌、每 IP 限流、首次访问本机审批、DSH 仍只监听 127.0.0.1 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) · [dsh-mobile-gate](https://github.com/Bernardxu123/dsh-mobile-gate) | 计划中 |
+| 文件传输——列目录 / 上传（2GB）/ Range 断点续传下载，防路径穿越 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
+| 多服务器 + 测速自动切换（局域网 / Tailscale / WAN） | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
+| 手机端离线聊天缓存 | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
+| 原生手机页面——会话 / 审批 / 提问 / goal | [dsh-Remote](https://github.com/Blank-not-black/dsh-Remote) | 计划中 |
+| 自动更新——客户端更新 + 上游核心同步（失败可回滚） | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) · [hairyf Tauri](https://github.com/hairyf/deepseek-harness-desktop) · [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | 计划中 |
+| 任务完成系统通知（点击聚焦窗口） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | 计划中 |
+| 托盘一键重启 DSH（杀进程树后重新拉起） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | 计划中 |
+| 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
+| PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
+| 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |
+| 第三方模型供应商设置向导（选供应商 → 填 Key → 自动建路由） | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
+| 便携式 `.dshpreset` agent 预设包（导入/导出带信任警告） | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
+| 会话统计栏余额/花费小组件 | 受 [EAC](https://github.com/zouyuxuan122/Deepseek-Harness-EAC) 启发（无许可证文件——仅功能借鉴，不抄代码） | 计划中 |
+| UI 皮肤（一键换主题） | 受 [EAC](https://github.com/zouyuxuan122/Deepseek-Harness-EAC) · [ChisaAlter](https://github.com/ChisaAlter/Deepseek-Harness-Desktop) 启发（仅功能借鉴） | 计划中 |
+
+> 我们应用已有的功能（LAN 代理 + mDNS、二维码/短码配对、UPnP 自动端口映射、WebRTC P2P + TURN）全部保留——此表只做加法。
 
 ## 安全说明
 

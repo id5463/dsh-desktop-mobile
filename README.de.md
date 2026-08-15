@@ -84,6 +84,7 @@ android/   Android-App (Java-WebView, lokaler Proxy, QR-Scanner, mDNS, WebRTC)
 - [ ] Eigener Relay-Server (WAN-Relay über die eigene Infrastruktur)
 - [ ] iOS-App
 - [ ] Fernzugriff/Gateway als installierbares `dsh`-Plugin verpacken (`dsh plugin add`)
+- [ ] Community-Feature-Merge (Übernahme MIT-lizenzierter Funktionen) — volle Liste in [README.md](README.md#community-feature-merge-permissive-licenses)
 
 ## Sicherheit
 

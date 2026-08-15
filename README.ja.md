@@ -84,6 +84,7 @@ android/   Androidアプリ（Java WebView、ローカルプロキシ、QRスキ
 - [ ] 自前リレーサーバー（自前インフラによるWANリレー）
 - [ ] iOSアプリ
 - [ ] リモート/ゲートウェイ機能をインストール可能な `dsh` プラグインとしてパッケージ化（`dsh plugin add`）
+- [ ] コミュニティ機能マージ（MITライセンスの機能を採用）— 一覧は [README.md](README.md#community-feature-merge-permissive-licenses)
 
 ## セキュリティ
 
