@@ -723,30 +723,40 @@ function startDshInBackground(host, port, runtime, loading) {
 let gatewayProcess = null
 let gatewayRestartTimer = null
 let gatewayStopping = false
+let gatewayCrashCount = 0
 
 function gatewayToken() { return store.get('remoteToken') }
 function gatewayPort() { return store.get('gatewayPort') || 8787 }
 
-/** 启动 dsh-Remote 网关子进程 (token 鉴权 + /fs/* 文件传输 + 设备管理 + 更新检查) */
+/** 启动 dsh-Remote 网关子进程 (token 鉴权 + /fs/* 文件传输 + 设备管理 + 更新检查)
+ *  用 ELECTRON_RUN_AS_NODE=1 让 Electron 二进制以纯 Node 模式运行, 避免拉起第二个 Electron 实例。 */
 function startRemoteGateway() {
   if (isQuitting || gatewayStopping || gatewayProcess) return
   const upstream = 'http://127.0.0.1:' + store.get('port')
   const env = {
     ...process.env,
+    ELECTRON_RUN_AS_NODE: '1',
     PORT: String(gatewayPort()),
     HOST: '0.0.0.0',
     DSH_UPSTREAM: upstream,
     TOKEN: gatewayToken(),
     DSH_REMOTE_FS_ROOT: require('os').homedir(),
   }
+  const startedAt = Date.now()
   gatewayProcess = spawn(process.execPath, [REMOTE_GATEWAY], { env, stdio: ['ignore', 'pipe', 'pipe'] })
   gatewayProcess.stdout.on('data', (d) => console.log('[gateway] ' + d.toString().trim()))
   gatewayProcess.stderr.on('data', (d) => console.error('[gateway] ' + d.toString().trim()))
   gatewayProcess.on('exit', (code) => {
     gatewayProcess = null
     console.log(`DSH Desktop: Remote 网关退出 (code ${code})`)
-    // 自愈: 意外退出 3 秒后自动拉起 (用户主动停止除外)
+    // 自愈: 意外退出 3 秒后自动拉起 (用户主动停止除外); 启动即崩(存活<2秒)连续发生时停止重试, 避免死循环
     if (!isQuitting && !gatewayStopping) {
+      if (Date.now() - startedAt >= 2000) {
+        gatewayCrashCount = 0 // 正常运行过 -> 重置崩溃计数
+      } else if (++gatewayCrashCount > 3) {
+        console.log('DSH Desktop: 网关连续启动失败, 停止自动重启')
+        return
+      }
       clearTimeout(gatewayRestartTimer)
       gatewayRestartTimer = setTimeout(startRemoteGateway, 3000)
     }
@@ -927,9 +937,22 @@ function createWindow() {
   })
 
   mainWindow.loadURL(url, { bypassCSP: true }).catch(() => {
-    mainWindow.loadFile(path.join(__dirname, 'error.html'), {
-      query: { host, port: String(port) },
-    })
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadFile(path.join(__dirname, 'error.html'), {
+        query: { host, port: String(port) },
+      }).catch(() => {})
+    }
+  })
+
+  // 渲染进程崩溃自愈: GPU/缓存等瞬态问题 2 秒后自动重载, 不再让窗口停在死状态
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.log('DSH Desktop: 渲染进程退出 (' + details.reason + '), 2 秒后自动重载')
+    if (isQuitting) return
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL(url, { bypassCSP: true }).catch(() => {})
+      }
+    }, 2000)
   })
 
   mainWindow.on('closed', () => { mainWindow = null })
