@@ -77,7 +77,7 @@
     <input id="f_name" placeholder="如 DeepSeek 官方 / SiliconFlow">
     <label>Base URL</label>
     <input id="f_base" placeholder="https://api.deepseek.com/v1">
-    <label>API Key</label>
+    <label>API Key <button class="small secondary" id="findKeyBtn" style="margin-left:8px">🔑 自动检测</button></label>
     <input id="f_key" placeholder="sk-..." type="password">
     <label>API 类型 / API type</label>
     <select id="f_api">
@@ -136,6 +136,20 @@
       document.getElementById('testResult').textContent = ''
     }
 
+    /** 自动寻找 DSH 正在使用的 API key 并填入 (不覆盖手动输入) */
+    async function autoFindKey() {
+      const keyInput = document.getElementById('f_key')
+      if (keyInput.value && keyInput.value.length > 4) { setStatus('已有 Key，未覆盖'); return }
+      const found = await ipcRenderer.invoke('provider-find-key')
+      if (found && found.key) {
+        keyInput.value = found.key
+        setStatus('🔑 已自动填入 DSH 的 Key（' + found.source + '）')
+        return found
+      }
+      setStatus('未找到现有 Key，请手动输入', true)
+      return null
+    }
+
     function showForm(provider) {
       formEl.classList.add('show')
       document.getElementById('formTitle').textContent = provider ? '编辑: ' + provider.name : '添加供应商'
@@ -146,6 +160,8 @@
       document.getElementById('f_api').value = provider ? (provider.api || 'openai-completions') : 'openai-completions'
       document.getElementById('f_models').value = provider ? (provider.models || []).join(', ') : ''
       window._editingId = provider ? provider.id : null
+      // 添加新供应商时自动检测 Key ("自己给自己装上")
+      if (!provider) autoFindKey()
     }
 
     function hideForm() {
@@ -222,9 +238,10 @@
 
     document.getElementById('addBtn').onclick = () => showForm(null)
     document.getElementById('cancelBtn').onclick = hideForm
+    document.getElementById('findKeyBtn').onclick = () => autoFindKey()
     document.getElementById('saveBtn').onclick = async () => {
       const r = await ipcRenderer.invoke('provider-save', formData())
-      if (r.ok) { setStatus('✅ 已保存 ' + r.id); hideForm(); render() }
+      if (r.ok) { setStatus('✅ 已保存 ' + r.id + (r.autoKey ? '（自动使用了 DSH 检测到的 Key）' : '')); hideForm(); render() }
       else setStatus('❌ ' + (r.error || ''), true)
     }
     document.getElementById('testBeforeSaveBtn').onclick = async () => {

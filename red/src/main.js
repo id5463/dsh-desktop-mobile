@@ -937,14 +937,22 @@ ipcMain.handle('provider-save', (_e, provider) => {
     }
     if (!p.name || !p.baseURL) return { ok: false, error: 'name/baseURL required' }
     const idx = list.findIndex((x) => x.id === p.id)
+    let autoKey = false
     if (idx >= 0) {
       // 编辑时 key 为空或为掩码(****) → 保留原 key
       p.apiKey = (!p.apiKey || p.apiKey.startsWith('****')) ? list[idx].apiKey : p.apiKey
       list[idx] = p
     }
-    else list.push(p)
+    else {
+      // 新供应商没填 key → 自动寻找 DSH 正在使用的 key ("自己给自己装上")
+      if (!p.apiKey) {
+        const found = findDshApiKey()
+        if (found) { p.apiKey = found.key; autoKey = true }
+      }
+      list.push(p)
+    }
     store.set('providers', list)
-    return { ok: true, id: p.id }
+    return { ok: true, id: p.id, autoKey }
   } catch (e) { return { ok: false, error: e.message } }
 })
 
@@ -953,6 +961,64 @@ ipcMain.handle('provider-delete', (_e, id) => {
   store.set('providers', list)
   return { ok: true }
 })
+
+/**
+ * 自动寻找 DSH 正在使用的 API key (用户不用自己翻配置重输)。
+ * 优先级:
+ *   1. 已保存的供应商列表里第一个有 key 的
+ *   2. settings.yaml 默认模型(agent-default-model.provider)对应供应商的 apiKeyEnv
+ *   3. .credentials.yaml 里的 DEEPSEEK_API_KEY
+ *   4. .credentials.yaml 第一个条目
+ *   5. 环境变量 DEEPSEEK_API_KEY / 其它 *_API_KEY
+ */
+function findDshApiKey() {
+  const fs = require('fs')
+  const home = dshHome()
+
+  // 已保存的供应商 key
+  const saved = (store.get('providers') || []).find((x) => x.apiKey)
+  if (saved) return { key: saved.apiKey, envName: saved.id.toUpperCase().replace(/[^A-Z0-9_]/g, '_') + '_API_KEY', source: '已保存的供应商(' + saved.name + ')' }
+
+  let settingsText = ''
+  let credsText = ''
+  try { settingsText = fs.readFileSync(path.join(home, 'settings.yaml'), 'utf8') } catch (e) {}
+  try { credsText = fs.readFileSync(path.join(home, '.credentials.yaml'), 'utf8') } catch (e) {}
+
+  // .credentials.yaml: KEY: value
+  const creds = {}
+  for (const m of credsText.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+?)\s*$/gm)) {
+    creds[m[1]] = String(m[2]).replace(/^["']|["']$/g, '')
+  }
+
+  // 1) settings.yaml 默认供应商的 apiKeyEnv
+  const dm = settingsText.match(/agent-default-model:\s*\n\s*provider:\s*(\S+)/)
+  if (dm) {
+    const provId = dm[1]
+    const provM = settingsText.match(new RegExp('\\n\\s{2,}' + provId + ':\\s*\\n([\\s\\S]*?)(?=\\n\\s{2}\\S+:|\\n\\S)', 'm'))
+    const envM = (provM ? provM[1] : '').match(/apiKeyEnv:\s*(\S+)/)
+    const env = envM && envM[1]
+    if (env && creds[env]) return { key: creds[env], envName: env, source: 'DSH 默认供应商 ' + provId + ' (credentials)' }
+    if (env && process.env[env]) return { key: process.env[env], envName: env, source: '环境变量 ' + env }
+  }
+
+  // 2) 标准 DeepSeek 环境变量 / credentials
+  for (const env of ['DEEPSEEK_API_KEY', 'DSH_API_KEY']) {
+    if (creds[env]) return { key: creds[env], envName: env, source: 'credentials (' + env + ')' }
+    if (process.env[env]) return { key: process.env[env], envName: env, source: '环境变量 ' + env }
+  }
+
+  // 3) .credentials.yaml 第一条
+  const first = Object.entries(creds)[0]
+  if (first) return { key: first[1], envName: first[0], source: '.credentials.yaml 第一条 (' + first[0] + ')' }
+
+  // 4) 任意 *_API_KEY 环境变量
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/^[A-Z0-9_]*API_KEY$/.test(k) && v) return { key: v, envName: k, source: '环境变量 ' + k }
+  }
+  return null
+}
+
+ipcMain.handle('provider-find-key', () => findDshApiKey())
 
 /** 找到 DSH_HOME: 环境变量优先, 否则 ~/.dsh */
 function dshHome() {
