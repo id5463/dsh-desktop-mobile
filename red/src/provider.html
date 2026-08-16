@@ -60,6 +60,19 @@
       <b id="formTitle">添加供应商</b>
       <button class="small secondary" id="cancelBtn">✕</button>
     </div>
+    <label>预设供应商 / Preset（选择后自动填好 Base URL 和模型，只需填 Key）</label>
+    <select id="f_preset" onchange="applyPreset()">
+      <option value="">✏️ 自定义 / Custom</option>
+      <option value="deepseek">DeepSeek 官方</option>
+      <option value="siliconflow">硅基流动 SiliconFlow</option>
+      <option value="moonshot">Moonshot Kimi</option>
+      <option value="zhipu">智谱 GLM</option>
+      <option value="dashscope">阿里云百炼 DashScope</option>
+      <option value="openrouter">OpenRouter</option>
+      <option value="groq">Groq</option>
+      <option value="yi">零一万物 01.AI</option>
+      <option value="ollama">Ollama（本地）</option>
+    </select>
     <label>名称 / Name</label>
     <input id="f_name" placeholder="如 DeepSeek 官方 / SiliconFlow">
     <label>Base URL</label>
@@ -85,6 +98,20 @@
 
   <script>
     const { ipcRenderer } = require('electron')
+
+    // 预设供应商模板 (参考 cc-switch AddProviderDialog, MIT): 端点已实测可达 (401=需鉴权)
+    const PRESETS = {
+      deepseek:    { name: 'DeepSeek 官方',      baseURL: 'https://api.deepseek.com/v1',           api: 'openai-completions', models: ['deepseek-chat', 'deepseek-reasoner'] },
+      siliconflow: { name: '硅基流动 SiliconFlow', baseURL: 'https://api.siliconflow.cn/v1',        api: 'openai-completions', models: ['deepseek-ai/DeepSeek-V3', 'deepseek-ai/DeepSeek-R1', 'Qwen/Qwen2.5-72B-Instruct'] },
+      moonshot:    { name: 'Moonshot Kimi',      baseURL: 'https://api.moonshot.cn/v1',            api: 'openai-completions', models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'] },
+      zhipu:       { name: '智谱 GLM',            baseURL: 'https://open.bigmodel.cn/api/paas/v4',  api: 'openai-completions', models: ['glm-4-flash', 'glm-4-plus', 'glm-4-long'] },
+      dashscope:   { name: '阿里云百炼 DashScope', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', api: 'openai-completions', models: ['qwen-max', 'qwen-plus', 'qwen-turbo'] },
+      openrouter:  { name: 'OpenRouter',          baseURL: 'https://openrouter.ai/api/v1',          api: 'openai-completions', models: ['deepseek/deepseek-chat', 'anthropic/claude-3.5-sonnet'] },
+      groq:        { name: 'Groq',                baseURL: 'https://api.groq.com/openai/v1',        api: 'openai-completions', models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] },
+      yi:          { name: '零一万物 01.AI',       baseURL: 'https://api.lingyiwanwu.com/v1',        api: 'openai-completions', models: ['yi-large', 'yi-medium'] },
+      ollama:      { name: 'Ollama（本地）',       baseURL: 'http://127.0.0.1:11434/v1',            api: 'openai-completions', models: ['llama3.1', 'qwen2.5'] },
+    }
+
     const listEl = document.getElementById('list')
     const statusEl = document.getElementById('status')
     const formEl = document.getElementById('form')
@@ -98,9 +125,21 @@
       return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
     }
 
+    function applyPreset() {
+      const key = document.getElementById('f_preset').value
+      if (!key || !PRESETS[key]) return
+      const p = PRESETS[key]
+      document.getElementById('f_name').value = p.name
+      document.getElementById('f_base').value = p.baseURL
+      document.getElementById('f_api').value = p.api
+      document.getElementById('f_models').value = p.models.join(', ')
+      document.getElementById('testResult').textContent = ''
+    }
+
     function showForm(provider) {
       formEl.classList.add('show')
       document.getElementById('formTitle').textContent = provider ? '编辑: ' + provider.name : '添加供应商'
+      document.getElementById('f_preset').value = ''
       document.getElementById('f_name').value = provider ? provider.name : ''
       document.getElementById('f_base').value = provider ? provider.baseURL : ''
       document.getElementById('f_key').value = provider && provider.apiKey && !provider.apiKey.startsWith('****') ? provider.apiKey : ''
