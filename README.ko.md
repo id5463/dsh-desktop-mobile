@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — Red & Blue
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)(`dsh`) — 오픈소스 AI 코딩 에이전트, "모든 것이 플러그인" — 의 네이티브 데스크톱 GUI + Android 원격 제어 앱입니다.
 
 > 커뮤니티 프로젝트이며 DeepSeek 공식 제품이 아닙니다.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **언어:** [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · 한국어 · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
@@ -43,7 +43,7 @@
 필수: Node.js ≥ 18(앱이 자체 런타임을 부트스트랩할 수도 있음).
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
@@ -52,11 +52,11 @@ npm start
 
 ### Android
 
-미리 빌드된 APK `android/dist/dsh-mobile-debug.apk`를 사이드로드("알 수 없는 앱 설치" 허용)하거나 직접 빌드:
+미리 빌드된 APK `blue/dist/dshd-blue.apk`를 사이드로드("알 수 없는 앱 설치" 허용)하거나 직접 빌드:
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # dist/dsh-mobile-debug.apk 생성 (Android Studio/Gradle 불필요)
+cd blue
+.\build-apk-aapt.ps1    # dist/dshd-blue.apk 생성 (Android Studio/Gradle 불필요)
 ```
 
 앱 실행 → 데스크톱 연결 창에서 코드 + QR 확인 → 휴대폰으로 스캔 → 연결 완료.
@@ -75,8 +75,8 @@ cd android
 ## 프로젝트 구조
 
 ```
-desktop/   Electron 데스크톱 앱 (Node.js, Electron, mqtt.js, simple-peer)
-android/   Android 앱 (Java WebView, 로컬 프록시, QR 스캐너, mDNS, WebRTC)
+red/   Electron 데스크톱 앱 (Node.js, Electron, mqtt.js, simple-peer)
+blue/   Android 앱 (Java WebView, 로컬 프록시, QR 스캐너, mDNS, WebRTC)
 ```
 
 ## 로드맵

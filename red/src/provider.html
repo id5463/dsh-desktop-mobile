@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e; color: #e0e0e0; padding: 24px;
+  }
+  h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #a0a0b0; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+  button {
+    border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px;
+    color: #fff; cursor: pointer; background: #dc3545;
+  }
+  button.secondary { background: #0f3460; }
+  button.danger { background: #b3261e; }
+  button.success { background: #00BFA5; }
+  button.small { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .card {
+    background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  }
+  .card .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .card .name { font-size: 15px; font-weight: 600; color: #fff; }
+  .card .meta { font-size: 12px; color: #a0a0b0; margin-top: 4px; word-break: break-all; }
+  .card .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 10px;
+    background: #1b5e20; color: #81c784;
+  }
+  .badge.off { background: #3a3f5c; color: #a0a0b0; }
+  .badge.err { background: #b71c1c; color: #ef9a9a; }
+  .form { display: none; }
+  .form.show { display: block; }
+  label { display: block; font-size: 12px; color: #a0a0b0; margin: 10px 0 4px; }
+  input, select {
+    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #0f3460;
+    background: #0f3460; color: #fff; font-size: 14px; outline: none;
+  }
+  .status { margin-top: 14px; font-size: 12px; color: #81c784; min-height: 16px; word-break: break-all; }
+  .status.err { color: #ef9a9a; }
+  .test-result { font-size: 12px; color: #81c784; margin-top: 6px; word-break: break-all; }
+  .test-result.err { color: #ef9a9a; }
+</style>
+</head>
+<body>
+  <h1>🔄 供应商管理 / Provider Manager</h1>
+  <p class="subtitle">管理多个模型 API 供应商并一键切换（功能参考 cc-switch, MIT）</p>
+
+  <div class="toolbar">
+    <button id="addBtn">➕ 添加供应商 / Add provider</button>
+  </div>
+
+  <div class="card form" id="form">
+    <div class="row" style="justify-content:space-between">
+      <b id="formTitle">添加供应商</b>
+      <button class="small secondary" id="cancelBtn">✕</button>
+    </div>
+    <label>名称 / Name</label>
+    <input id="f_name" placeholder="如 DeepSeek 官方 / SiliconFlow">
+    <label>Base URL</label>
+    <input id="f_base" placeholder="https://api.deepseek.com/v1">
+    <label>API Key</label>
+    <input id="f_key" placeholder="sk-..." type="password">
+    <label>API 类型 / API type</label>
+    <select id="f_api">
+      <option value="openai-completions">openai-completions</option>
+      <option value="openai-chat">openai-chat</option>
+    </select>
+    <label>模型 ID（逗号分隔）/ Models (comma-separated)</label>
+    <input id="f_models" placeholder="deepseek-chat, deepseek-reasoner">
+    <div class="toolbar" style="margin-top:14px">
+      <button class="success" id="saveBtn">💾 保存 / Save</button>
+      <button class="secondary" id="testBeforeSaveBtn">⚡ 测速 / Speed test</button>
+    </div>
+    <div class="test-result" id="testResult"></div>
+  </div>
+
+  <div id="list"></div>
+  <div class="status" id="status"></div>
+
+  <script>
+    const { ipcRenderer } = require('electron')
+    const listEl = document.getElementById('list')
+    const statusEl = document.getElementById('status')
+    const formEl = document.getElementById('form')
+
+    function setStatus(text, isErr) {
+      statusEl.textContent = text
+      statusEl.className = 'status' + (isErr ? ' err' : '')
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    }
+
+    function showForm(provider) {
+      formEl.classList.add('show')
+      document.getElementById('formTitle').textContent = provider ? '编辑: ' + provider.name : '添加供应商'
+      document.getElementById('f_name').value = provider ? provider.name : ''
+      document.getElementById('f_base').value = provider ? provider.baseURL : ''
+      document.getElementById('f_key').value = provider && provider.apiKey && !provider.apiKey.startsWith('****') ? provider.apiKey : ''
+      document.getElementById('f_api').value = provider ? (provider.api || 'openai-completions') : 'openai-completions'
+      document.getElementById('f_models').value = provider ? (provider.models || []).join(', ') : ''
+      window._editingId = provider ? provider.id : null
+    }
+
+    function hideForm() {
+      formEl.classList.remove('show')
+      window._editingId = null
+    }
+
+    function formData() {
+      return {
+        id: window._editingId,
+        name: document.getElementById('f_name').value,
+        baseURL: document.getElementById('f_base').value,
+        apiKey: document.getElementById('f_key').value,
+        api: document.getElementById('f_api').value,
+        models: document.getElementById('f_models').value.split(',').map(s => s.trim()).filter(Boolean),
+      }
+    }
+
+    async function render() {
+      const list = await ipcRenderer.invoke('providers-list')
+      listEl.innerHTML = list.map((p) => `
+        <div class="card">
+          <div class="row">
+            <div>
+              <span class="name">${esc(p.name)}</span>
+              ${p.active ? '<span class="badge">✓ 当前使用</span>' : '<span class="badge off">未激活</span>'}
+            </div>
+            <div class="actions">
+              <button class="small success" onclick="apply('${esc(p.id)}')">激活</button>
+              <button class="small secondary" onclick="test('${esc(p.id)}')">⚡ 测速</button>
+              <button class="small secondary" onclick="edit('${esc(p.id)}')">编辑</button>
+              <button class="small danger" onclick="del('${esc(p.id)}')">删除</button>
+            </div>
+          </div>
+          <div class="meta">${esc(p.baseURL)} · key ${esc(p.apiKey || '(无)')} · ${(p.models || []).length} 模型</div>
+          <div class="test-result" id="tr-${esc(p.id)}"></div>
+        </div>`).join('')
+    }
+
+    window.apply = async function (id) {
+      setStatus('正在激活 ' + id + ' …')
+      const r = await ipcRenderer.invoke('provider-apply', id)
+      if (r.ok) { setStatus('✅ 已激活 ' + id + (r.apiKeyEnv ? ' (凭证 ' + r.apiKeyEnv + ')' : '')) }
+      else setStatus('❌ 激活失败: ' + (r.error || ''), true)
+      render()
+    }
+
+    window.test = async function (id) {
+      const list = await ipcRenderer.invoke('providers-list')
+      const p = list.find(x => x.id === id)
+      if (!p) return
+      // 编辑模式 key 是掩码, 无法测速; 用保存时的原始值
+      setStatus('测速 ' + p.name + ' …')
+      const r = await ipcRenderer.invoke('provider-test', {
+        id: p.id, name: p.name, baseURL: p.baseURL, api: p.api, apiKey: '',
+      })
+      const el = document.getElementById('tr-' + id)
+      if (r.ok) el.innerHTML = '⚡ ' + r.ms + 'ms · 发现 ' + r.models.length + ' 个模型: ' + esc(r.models.slice(0, 6).join(', '))
+      else el.innerHTML = '⚡ 测速失败 (' + r.ms + 'ms): ' + esc(r.error || '')
+      setStatus('')
+    }
+
+    window.edit = async function (id) {
+      const list = await ipcRenderer.invoke('providers-list')
+      const p = list.find(x => x.id === id)
+      if (p) showForm(p)
+    }
+
+    window.del = async function (id) {
+      if (!confirm('删除供应商 ' + id + '？')) return
+      await ipcRenderer.invoke('provider-delete', id)
+      render()
+    }
+
+    document.getElementById('addBtn').onclick = () => showForm(null)
+    document.getElementById('cancelBtn').onclick = hideForm
+    document.getElementById('saveBtn').onclick = async () => {
+      const r = await ipcRenderer.invoke('provider-save', formData())
+      if (r.ok) { setStatus('✅ 已保存 ' + r.id); hideForm(); render() }
+      else setStatus('❌ ' + (r.error || ''), true)
+    }
+    document.getElementById('testBeforeSaveBtn').onclick = async () => {
+      const d = formData()
+      setStatus('测速 ' + d.name + ' …')
+      const r = await ipcRenderer.invoke('provider-test', { ...d })
+      document.getElementById('testResult').className = 'test-result' + (r.ok ? '' : ' err')
+      if (r.ok) document.getElementById('testResult').textContent = '⚡ ' + r.ms + 'ms · ' + r.models.length + ' 个模型: ' + r.models.slice(0, 6).join(', ')
+      else document.getElementById('testResult').textContent = '⚡ 失败 (' + r.ms + 'ms): ' + (r.error || '')
+      setStatus('')
+    }
+
+    render()
+  </script>
+</body>
+</html>

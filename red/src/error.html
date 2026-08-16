@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>dshd Red - Connection Error</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 24px; margin-bottom: 12px; color: #fff; }
+        p { font-size: 14px; line-height: 1.6; color: #a0a0b0; margin-bottom: 24px; }
+        .details {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            text-align: left;
+        }
+        .details dt { color: #dc3545; font-weight: 600; margin-top: 8px; }
+        .details dt:first-child { margin-top: 0; }
+        .details dd { color: #a0a0b0; margin-left: 0; margin-top: 4px; }
+        .btn {
+            background: #dc3545;
+            color: #fff;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1557b0; }
+        .btn:active { background: #0d47a1; }
+        .hint { margin-top: 16px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔌</div>
+        <h1>Cannot Connect to DSH</h1>
+        <p>The DeepSeek Harness server does not appear to be running at the configured address.</p>
+        <div class="details" id="details">
+            <dt>Target</dt>
+            <dd id="target">http://127.0.0.1:3080</dd>
+            <dt>Possible causes</dt>
+            <dd>• DSH is not started yet</dd>
+            <dd>• Wrong host or port</dd>
+            <dd>• Server is on a different network</dd>
+        </div>
+        <button class="btn" onclick="retry()">Retry Connection</button>
+        <p class="hint">Start DSH with: <code>dsh --profile web</code></p>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const host = params.get('host') || '127.0.0.1';
+        const port = params.get('port') || '3080';
+        const targetUrl = 'http://' + host + ':' + port;
+        document.getElementById('target').textContent = targetUrl;
+
+        function retry() {
+            // Use a fetch to check if the server is up, then redirect
+            fetch(targetUrl, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => { window.location.href = targetUrl; })
+                .catch(() => {
+                    document.querySelector('.hint').textContent = 'Retrying in 5 seconds... (' + new Date().toLocaleTimeString() + ')';
+                    setTimeout(retry, 5000);
+                });
+        }
+
+        // Auto-retry after 3 seconds
+        setTimeout(retry, 3000);
+    </script>
+</body>
+</html>

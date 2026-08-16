@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — Red & Blue
 
 Нативный десктопный GUI + удалённое управление с Android для [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) — open-source ИИ-агента для программирования, где *всё является плагином*.
 
 > Сообщество-проект, а не официальный продукт DeepSeek.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **Языки:** [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · Русский
 
@@ -43,7 +43,7 @@
 Требование: Node.js ≥ 18 (приложение также может само подготовить среду выполнения).
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
@@ -52,11 +52,11 @@ npm start
 
 ### Android
 
-Возьмите готовый APK из `android/dist/dsh-mobile-debug.apk` и установите вручную (разрешите «установку из неизвестных источников»), либо соберите сами:
+Возьмите готовый APK из `blue/dist/dshd-blue.apk` и установите вручную (разрешите «установку из неизвестных источников»), либо соберите сами:
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # создаёт dist/dsh-mobile-debug.apk, без Android Studio/Gradle
+cd blue
+.\build-apk-aapt.ps1    # создаёт dist/dshd-blue.apk, без Android Studio/Gradle
 ```
 
 Откройте приложение → в окне подключения десктопа показаны код + QR → отсканируйте телефоном → подключено.
@@ -75,8 +75,8 @@ cd android
 ## Структура проекта
 
 ```
-desktop/   Десктопное приложение Electron (Node.js, Electron, mqtt.js, simple-peer)
-android/   Android-приложение (Java WebView, локальный прокси, QR-сканер, mDNS, WebRTC)
+red/   Десктопное приложение Electron (Node.js, Electron, mqtt.js, simple-peer)
+blue/   Android-приложение (Java WebView, локальный прокси, QR-сканер, mDNS, WebRTC)
 ```
 
 ## Дорожная карта

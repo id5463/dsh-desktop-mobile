@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — 红端（桌面）& 蓝端（移动）
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）——"万物皆插件"的开源 AI 编程代理——的原生桌面端 + Android 手机远程控制。
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）——"万物皆插件"的开源 AI 编程代理——的原生桌面端 + Android 手机远程控制（dshd 家族：红端=桌面，蓝端=移动）。
 
 > 社区项目，非 DeepSeek 官方产品。
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **阅读语言：** [English](README.md) · 简体中文 · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
@@ -14,13 +14,13 @@
 
 ## 你能得到什么
 
-| | 桌面端 | Android 端 |
+| | dshd Red（桌面端） | dshd Blue（移动端） |
 |---|---|---|
 | 是什么 | 官方 DSH Web UI 的原生 Electron 窗口 | 随时随地远程控制你的 DSH |
 | 安装 | 零配置：首次启动自动下载安装 Node.js + DSH（带进度条） | 装 APK，扫二维码 |
 | 远程 | 短码 + 二维码配对、UPnP 自动端口映射、WebRTC P2P | 同局域网自动发现 + 互联网远程 |
 
-### 桌面端
+### dshd Red（桌面端）
 
 - **零配置启动**：如果缺少 Node.js 或 DSH，应用会自动下载安装（带进度条），双击即用。
 - **完整 DSH Web UI**，原生窗口，支持系统托盘、重启服务器、中英文切换。
@@ -29,7 +29,7 @@
 - **零配置远程访问**：应用可通过 UPnP 自动在路由器上映射端口并发布公网 IP，互联网上的手机无需任何路由器设置即可直连。
 - **WebRTC P2P 兜底**：直连不可用时，自动协商加密点对点通道（带 TURN 中继兜底）。
 
-### Android 端
+### dshd Blue（移动端）
 
 - 扫二维码或输入桌面端显示的短码。
 - 同一 Wi-Fi 下自动发现桌面（mDNS）。
@@ -38,25 +38,25 @@
 
 ## 快速开始
 
-### 桌面端
+### dshd Red（桌面端）
 
 环境要求：Node.js ≥ 18（应用也能自带运行时）。
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
 
 首次运行会自动检查 DSH，需要时下载（进度条）并打开 Web UI。
 
-### Android 端
+### dshd Blue（移动端）
 
-直接安装预构建 APK `android/dist/dsh-mobile-debug.apk`（需允许"安装未知应用"），或自己构建：
+直接安装预构建 APK `blue/dist/dshd-blue.apk`（需允许"安装未知应用"），或自己构建：
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # 产出 dist/dsh-mobile-debug.apk，无需 Android Studio/Gradle
+cd blue
+.\build-apk-aapt.ps1    # 产出 dist/dshd-blue.apk，无需 Android Studio/Gradle
 ```
 
 打开应用 → 桌面端连接窗口显示短码 + 二维码 → 手机扫码 → 连接成功。
@@ -75,8 +75,8 @@ cd android
 ## 项目结构
 
 ```
-desktop/   Electron 桌面应用（Node.js、Electron、mqtt.js、simple-peer）
-android/   Android 应用（Java WebView、本地代理、二维码扫描、mDNS、WebRTC）
+red/   dshd Red — Electron 桌面应用（Node.js、Electron、mqtt.js、simple-peer）
+blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫描、mDNS、WebRTC）
 ```
 
 ## 路线图

@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — Red & Blue
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（`dsh`）——「すべてがプラグイン」のオープンソースAIコーディングエージェント——のネイティブデスクトップGUI＋Androidリモートコントロール。
 
 > コミュニティプロジェクトです。DeepSeek 公式製品ではありません。
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **言語:** [English](README.md) · [简体中文](README.zh-CN.md) · 日本語 · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
@@ -43,7 +43,7 @@
 前提：Node.js ≥ 18（アプリがランタイムを自動導入することも可能）。
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
@@ -52,11 +52,11 @@ npm start
 
 ### Android
 
-ビルド済みAPK `android/dist/dsh-mobile-debug.apk` をサイドロード（「不明なアプリのインストール」を許可）、または自分でビルド：
+ビルド済みAPK `blue/dist/dshd-blue.apk` をサイドロード（「不明なアプリのインストール」を許可）、または自分でビルド：
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # dist/dsh-mobile-debug.apk を生成（Android Studio/Gradle不要）
+cd blue
+.\build-apk-aapt.ps1    # dist/dshd-blue.apk を生成（Android Studio/Gradle不要）
 ```
 
 アプリを開く → デスクトップの接続ウィンドウにコード＋QRを表示 → スマホでスキャン → 接続完了。
@@ -75,8 +75,8 @@ cd android
 ## プロジェクト構成
 
 ```
-desktop/   Electronデスクトップアプリ（Node.js、Electron、mqtt.js、simple-peer）
-android/   Androidアプリ（Java WebView、ローカルプロキシ、QRスキャナー、mDNS、WebRTC）
+red/   Electronデスクトップアプリ（Node.js、Electron、mqtt.js、simple-peer）
+blue/   Androidアプリ（Java WebView、ローカルプロキシ、QRスキャナー、mDNS、WebRTC）
 ```
 
 ## ロードマップ

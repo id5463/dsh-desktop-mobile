@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — Red & Blue
 
 Native Desktop-GUI + Android-Fernsteuerung für [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) — den Open-Source-KI-Coding-Agenten, bei dem *alles ein Plugin ist*.
 
 > Ein Community-Projekt, kein offizielles DeepSeek-Produkt.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **Sprachen:** [English](README.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · Deutsch · [Русский](README.ru.md)
 
@@ -43,7 +43,7 @@ Native Desktop-GUI + Android-Fernsteuerung für [DeepSeek Harness](https://githu
 Voraussetzung: Node.js ≥ 18 (die App kann auch ihre eigene Laufzeit bereitstellen).
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
@@ -52,11 +52,11 @@ Beim ersten Start prüft die App DSH, lädt es bei Bedarf herunter (Fortschritts
 
 ### Android
 
-Nimm die vorgebaute APK unter `android/dist/dsh-mobile-debug.apk` und sideloade sie („Unbekannte Apps installieren" erlauben), oder baue sie selbst:
+Nimm die vorgebaute APK unter `blue/dist/dshd-blue.apk` und sideloade sie („Unbekannte Apps installieren" erlauben), oder baue sie selbst:
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # erzeugt dist/dsh-mobile-debug.apk, ohne Android Studio/Gradle
+cd blue
+.\build-apk-aapt.ps1    # erzeugt dist/dshd-blue.apk, ohne Android Studio/Gradle
 ```
 
 Öffne die App → das Verbindungsfenster des Desktops zeigt Code + QR → mit dem Telefon scannen → verbunden.
@@ -75,8 +75,8 @@ Die App funktioniert in normalen Festnetz- und Mobilfunknetzen. Einige Mobilfunk
 ## Projektstruktur
 
 ```
-desktop/   Electron-Desktop-App (Node.js, Electron, mqtt.js, simple-peer)
-android/   Android-App (Java-WebView, lokaler Proxy, QR-Scanner, mDNS, WebRTC)
+red/   Electron-Desktop-App (Node.js, Electron, mqtt.js, simple-peer)
+blue/   Android-App (Java-WebView, lokaler Proxy, QR-Scanner, mDNS, WebRTC)
 ```
 
 ## Roadmap

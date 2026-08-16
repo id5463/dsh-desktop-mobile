@@ -1,12 +1,12 @@
-# DSH Desktop & Mobile
+# dshd — Red (desktop) & Blue (mobile)
 
 Native desktop GUI + Android remote control for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) — the open-source AI coding agent where *everything is a plugin*.
 
 > A community project, not an official DeepSeek product.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Desktop](https://img.shields.io/badge/desktop-Electron-47848F.svg)](desktop/)
-[![Android](https://img.shields.io/badge/android-APK-3DDC84.svg)](android/)
+[![Desktop](https://img.shields.io/badge/dshd-Red-E05252.svg)](red/)
+[![Android](https://img.shields.io/badge/dshd-Blue-3DDC84.svg)](blue/)
 
 **Read this in:** English · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md)
 
@@ -14,13 +14,13 @@ Native desktop GUI + Android remote control for [DeepSeek Harness](https://githu
 
 ## What you get
 
-| | Desktop app | Android app |
+| | dshd Red (desktop) | dshd Blue (mobile) |
 |---|---|---|
 | What | Native Electron window around the official DSH Web UI | Remote control for your DSH from anywhere |
 | Setup | Zero-config: auto-installs Node.js + DSH on first run (progress bar included) | Install the APK, scan a QR code |
 | Remote | Short code + QR pairing, UPnP auto port-forwarding, WebRTC P2P | Same-LAN auto discovery + Internet remote |
 
-### Desktop
+### dshd Red (desktop)
 
 - **Zero-setup boot**: if Node.js or DSH is missing, the app downloads and installs them automatically with a progress bar. Double-click and go.
 - **Full DSH Web UI** in a native window, with system tray, server restart, and language switching (中文 / English).
@@ -29,7 +29,7 @@ Native desktop GUI + Android remote control for [DeepSeek Harness](https://githu
 - **Zero-config remote access**: the app can auto-forward a port on your router via UPnP and publish your public IP, so an Internet phone can reach it directly without touching your router settings.
 - **WebRTC P2P fallback**: when direct access is not possible, an encrypted peer-to-peer channel (with TURN relay fallback) is negotiated automatically.
 
-### Android
+### dshd Blue (mobile)
 
 - Scan the QR code or type the short code from the desktop app.
 - Auto-discovery of desktops on the same Wi-Fi (mDNS).
@@ -38,25 +38,25 @@ Native desktop GUI + Android remote control for [DeepSeek Harness](https://githu
 
 ## Quick start
 
-### Desktop
+### dshd Red (desktop)
 
 Prerequisites: Node.js ≥ 18 (the app can also bootstrap its own runtime).
 
 ```bash
-cd desktop
+cd red
 npm install
 npm start
 ```
 
 On first run the app checks for DSH, downloads it if needed (progress bar), and opens the Web UI.
 
-### Android
+### dshd Blue (mobile)
 
-Grab the prebuilt APK at `android/dist/dsh-mobile-debug.apk` and sideload it (enable "install unknown apps"), or build it yourself:
+Grab the prebuilt APK at `blue/dist/dshd-blue.apk` and sideload it (enable "install unknown apps"), or build it yourself:
 
 ```powershell
-cd android
-.\build-apk-aapt.ps1    # produces dist/dsh-mobile-debug.apk, no Android Studio/Gradle needed
+cd blue
+.\build-apk-aapt.ps1    # produces dist/dshd-blue.apk, no Android Studio/Gradle needed
 ```
 
 Open the app → the desktop connection window shows a code + QR → scan with the phone → connected.
@@ -75,8 +75,8 @@ The app works on normal broadband and mobile networks. Some mobile ISPs (for exa
 ## Project layout
 
 ```
-desktop/   Electron desktop app (Node.js, Electron, mqtt.js, simple-peer)
-android/   Android app (Java WebView, local proxy, QR scanner, mDNS, WebRTC)
+red/   dshd Red — Electron desktop app (Node.js, Electron, mqtt.js, simple-peer)
+blue/  dshd Blue — Android app (Java WebView, local proxy, QR scanner, mDNS, WebRTC)
 ```
 
 ## Roadmap

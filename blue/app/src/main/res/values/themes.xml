@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DSHdBlue" parent="@android:style/Theme.Holo.Light.NoActionBar">
+        <item name="android:statusBarColor">#0D47A1</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+    </style>
+
+    <style name="Theme.DSHdBlue.Settings" parent="Theme.DSHdBlue">
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
+</resources>

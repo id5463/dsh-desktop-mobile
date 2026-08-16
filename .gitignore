@@ -1,5 +1,5 @@
 node_modules/
-/desktop/dist/
+/red/dist/
 out/
 build/
 *.log
@@ -10,4 +10,4 @@ build/
 local.properties
 gradle-8.12-bin.zip
 *.apk
-!android/dist/dsh-mobile-debug.apk
+!blue/dist/dshd-blue.apk

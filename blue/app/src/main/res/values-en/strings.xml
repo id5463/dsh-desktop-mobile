@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">dshd Blue</string>
+    <string name="app_description">DeepSeek Harness Mobile Client (dshd Blue)</string>
+    <string name="settings">Settings</string>
+    <string name="host_label">Host</string>
+    <string name="port_label">Port</string>
+    <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="reconnect">Reconnect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="connection_error">Connection error</string>
+    <string name="connection_timeout">Connection timeout</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="default_host">127.0.0.1</string>
+    <string name="default_port">3080</string>
+    <string name="scan_qr">Scan QR Code</string>
+    <string name="about">About dshd Blue</string>
+    <string name="version_info">Version 1.0.0</string>
+    <string name="refresh">Refresh</string>
+    <string name="open_in_browser">Open in Browser</string>
+    <string name="connect_title">Connect to Desktop (dshd Red)</string>
+    <string name="connect_subtitle">Enter the connection code shown on your desktop, or connect via LAN</string>
+    <string name="code_label">Connection Code</string>
+    <string name="code_hint">dsh-XXXX</string>
+    <string name="p2p_connect">P2P Connect</string>
+    <string name="lan_connect">LAN Connect</string>
+    <string name="auto_connecting">Auto-connecting…</string>
+    <string name="proxy_ready">Proxy Ready</string>
+    <string name="menu_reload">Reload</string>
+    <string name="menu_new_connection">New Connection</string>
+    <string name="menu_open_browser">Open in Browser</string>
+    <string name="menu_disconnect">Disconnect</string>
+</resources>
