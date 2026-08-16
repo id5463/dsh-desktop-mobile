@@ -664,11 +664,19 @@ function startDshInBackground(host, port, runtime, loading) {
     if (port !== 3080) args.push('--port', String(port))
 
     // 决定启动命令：开发环境用本地 dsh；否则用 npx @deepseek-ai/dsh
+    // [冷启动修复] JS 入口必须用真实 node 运行, 不能用 process.execPath(electron) 跑 CLI
     let command, commandArgs
+    const env = { ...process.env }
     if (devDsh !== 'dsh') {
-      command = devDsh.endsWith('.js') ? process.execPath : devDsh
-      commandArgs = devDsh.endsWith('.js') ? [devDsh, ...args] : args
-      console.log(`DSH Desktop: Starting "${devDsh} ${args.join(' ')}"`)
+      if (devDsh.endsWith('.js')) {
+        command = (runtime && runtime.node) ? runtime.node : process.execPath
+        if (command === process.execPath) env.ELECTRON_RUN_AS_NODE = '1'
+        commandArgs = [devDsh, ...args]
+      } else {
+        command = devDsh
+        commandArgs = args
+      }
+      console.log(`DSH Desktop: Starting "${command} ${commandArgs.join(' ')}"`)
     } else if (runtime) {
       // npx 方式（自动下载 DSH）
       sendBootProgress(loading, { step: 2, text: '通过 npx 准备 DSH（首次会下载）…', percent: 60 })
@@ -687,6 +695,7 @@ function startDshInBackground(host, port, runtime, loading) {
       detached: false,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: !devDsh || devDsh === 'dsh' || runtime ? (process.platform === 'win32') : false,
+      env,
     })
 
     sendBootProgress(loading, { step: 3, text: '启动 DSH 服务器…', percent: 75 })
@@ -878,7 +887,186 @@ function notifyTaskDone(title) {
   } catch (e) { /* 通知不可用时静默 */ }
 }
 
+// ====== 供应商管理器 (功能来自 farion1231/cc-switch, MIT) ======
+
+/** 调用 DSH HTTP JSON-RPC: POST /api/<method> */
+function dshRpc(method, payload) {
+  return new Promise((resolve) => {
+    const port = store.get('port')
+    const body = JSON.stringify({
+      type: 'client-request',
+      rpcId: 'dsh-pm-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      method,
+      payload,
+    })
+    const req = http.request({
+      hostname: '127.0.0.1', port, path: '/api/' + method, method: 'POST',
+      headers: { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) },
+      timeout: 20000,
+    }, (res) => {
+      let d = ''
+      res.on('data', (c) => { d += c; if (d.length > 4 * 1024 * 1024) res.destroy() })
+      res.on('end', () => { try { resolve(JSON.parse(d)) } catch (e) { resolve(null) } })
+    })
+    req.on('error', () => resolve(null))
+    req.on('timeout', () => { try { req.destroy() } catch (e) {} resolve(null) })
+    req.end(body)
+  })
+}
+
+function providersList() {
+  return (store.get('providers') || []).map((p) => ({
+    ...p,
+    apiKey: p.apiKey ? '****' + p.apiKey.slice(-4) : '',
+  }))
+}
+
+ipcMain.handle('providers-list', () => providersList())
+
+ipcMain.handle('provider-save', (_e, provider) => {
+  try {
+    const list = store.get('providers') || []
+    const p = {
+      id: (provider.id || provider.name).toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+      name: String(provider.name || '').trim(),
+      baseURL: String(provider.baseURL || '').trim().replace(/\/+$/, ''),
+      apiKey: String(provider.apiKey || '').trim(),
+      api: provider.api || 'openai-completions',
+      models: (provider.models || []).map((m) => String(m).trim()).filter(Boolean),
+      active: !!provider.active,
+    }
+    if (!p.name || !p.baseURL) return { ok: false, error: 'name/baseURL required' }
+    const idx = list.findIndex((x) => x.id === p.id)
+    if (idx >= 0) {
+      // 编辑时 key 为空或为掩码(****) → 保留原 key
+      p.apiKey = (!p.apiKey || p.apiKey.startsWith('****')) ? list[idx].apiKey : p.apiKey
+      list[idx] = p
+    }
+    else list.push(p)
+    store.set('providers', list)
+    return { ok: true, id: p.id }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+ipcMain.handle('provider-delete', (_e, id) => {
+  const list = (store.get('providers') || []).filter((x) => x.id !== id)
+  store.set('providers', list)
+  return { ok: true }
+})
+
+/** 找到 DSH_HOME: 环境变量优先, 否则 ~/.dsh */
+function dshHome() {
+  return process.env.DSH_HOME || require('path').join(require('os').homedir(), '.dsh')
+}
+
+/**
+ * 精确补丁 settings.yaml 的 agent-default-model 块 (该命名空间不对配置客户端暴露, 只能直接写文件)。
+ * 只替换/追加这一个顶层块, 其余内容原样保留; 写前备份, DSH 的 settings 监听器会热加载。
+ */
+function patchDefaultModel(provider, model) {
+  const fs = require('fs')
+  const file = require('path').join(dshHome(), 'settings.yaml')
+  let text = ''
+  try { text = fs.readFileSync(file, 'utf8') } catch (e) { text = '' }
+  // 备份
+  try { fs.writeFileSync(file + '.bak', text) } catch (e) {}
+
+  const block = 'agent-default-model:\n  provider: ' + provider + '\n  model: ' + model + '\n'
+  const lines = text.split(/\r?\n/)
+  let start = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (/^agent-default-model:\s*$/.test(lines[i])) { start = i; break }
+  }
+  let out
+  if (start === -1) {
+    out = text.trimEnd() + '\n' + block
+  } else {
+    // 找块结束: 下一个非缩进的顶层键
+    let end = lines.length
+    for (let i = start + 1; i < lines.length; i++) {
+      if (lines[i] && !/^\s/.test(lines[i])) { end = i; break }
+    }
+    out = lines.slice(0, start).concat(block.trimEnd(), lines.slice(end)).join('\n')
+  }
+  fs.writeFileSync(file, out)
+  return true
+}
+
+/** 激活: 通过 DSH Settings/Credentials API 写入 llm-pi-ai + 凭证, 并补丁默认模型 */
+ipcMain.handle('provider-apply', async (_e, id) => {
+  try {
+    const list = store.get('providers') || []
+    const p = list.find((x) => x.id === id)
+    if (!p) return { ok: false, error: 'not-found' }
+    if (!p.apiKey) return { ok: false, error: 'apiKey required' }
+    const apiKeyEnv = p.id.toUpperCase().replace(/[^A-Z0-9_]/g, '_') + '_API_KEY'
+    const section = {
+      apiKeyEnv,
+      api: p.api || 'openai-completions',
+      baseURL: p.baseURL,
+      defaultInput: ['text'],
+    }
+    const models = (p.models || []).map((m) => ({ id: m }))
+    if (models.length) section.models = models
+
+    const r1 = await dshRpc('settings.update', { ns: 'llm-pi-ai', patch: { providers: { [p.id]: section } } })
+    if (!r1 || !r1.result || !r1.result.ok) return { ok: false, error: 'settings.update(llm-pi-ai): ' + JSON.stringify(r1 && r1.result && r1.result.error || r1) }
+    const r3 = await dshRpc('credentials.set', { ref: apiKeyEnv, value: p.apiKey })
+    if (!r3 || !r3.result || !r3.result.ok) return { ok: false, error: 'credentials.set: ' + JSON.stringify(r3 && r3.result && r3.result.error || r3) }
+    // 默认模型: agent-default-model 命名空间不对 API 暴露, 直接安全补丁 settings.yaml (DSH 热加载)
+    try {
+      patchDefaultModel(p.id, models.length ? models[0].id : p.models[0])
+    } catch (e) {
+      return { ok: false, error: 'patchDefaultModel: ' + e.message }
+    }
+
+    store.set('providers', list.map((x) => ({ ...x, active: x.id === id })))
+    return { ok: true, apiKeyEnv }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+/** 测速 + 模型发现: 走 llm.discoverModels (参考 cc-switch EndpointSpeedTest) */
+ipcMain.handle('provider-test', async (_e, provider) => {
+  try {
+    let p = provider || {}
+    // 已保存的供应商: 渲染进程拿到的是掩码 key, 按 id 从 store 取真实 key
+    if ((!p.apiKey || String(p.apiKey).startsWith('****')) && p.id) {
+      const saved = (store.get('providers') || []).find((x) => x.id === p.id)
+      if (saved) p = { ...saved, ...p }
+    }
+    if (!p.apiKey) return { ok: false, error: '需要 API Key（保存后无法测速）' }
+    const t0 = Date.now()
+    const r = await dshRpc('llm.discoverModels', {
+      settingsNs: 'llm-pi-ai',
+      provider: p.id || p.name,
+      baseURL: p.baseURL,
+      api: p.api || 'openai-completions',
+      apiKey: p.apiKey,
+    })
+    const ms = Date.now() - t0
+    if (!r || !r.result || !r.result.ok) {
+      return { ok: false, ms, error: (r && r.result && r.result.error && r.result.error.message) || '超时或无响应' }
+    }
+    const models = (r.result.value.models || []).map((m) => m.id)
+    return { ok: true, ms, models }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
 // ====== 窗口管理 ======
+
+/** 供应商管理窗口 (功能参考 cc-switch, MIT) */
+function createProviderWindow() {
+  const win = new BrowserWindow({
+    width: 760,
+    height: 640,
+    resizable: true,
+    title: t('providers_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  win.loadFile(path.join(__dirname, 'provider.html'), { query: { lang } })
+  return win
+}
 
 function createConnectionWindow() {
   const peerId = store.get('peerId')
@@ -973,6 +1161,7 @@ function buildMenu() {
       label: t('menu_dsh'),
       submenu: [
         { label: t('menu_remote_connection'), accelerator: 'CmdOrCtrl+R', click: () => createConnectionWindow() },
+        { label: t('menu_providers'), accelerator: 'CmdOrCtrl+P', click: () => createProviderWindow() },
         { type: 'separator' },
         { label: t('menu_restart_server'), accelerator: 'CmdOrCtrl+Shift+R', click: () => restartDsh() },
         { type: 'separator' },

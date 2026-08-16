@@ -101,6 +101,8 @@ We benchmarked the DSH desktop & mobile ecosystem and are adopting the best feat
 | Task-complete system notification (click to focus window) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** (polls `session.list`) |
 | Tray one-click restart of DSH (kill process tree + relaunch) | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **shipped** |
 | Mobile UI polish — 44px touch targets, full-width layout, `crypto.randomUUID` polyfill, auto-reconnect on network drop | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **shipped** |
+| LLM provider manager — multi-provider list, one-click activate, endpoint speed test + model discovery | [cc-switch](https://github.com/farion1231/cc-switch) | **shipped** (menu → Provider Manager) |
+| Cold-start robustness — DSH CLI runs on real Node (not Electron), renderer self-heal, crash-loop guard | — | **shipped** |
 | Security hardening — random loopback port, sandbox, navigation restrictions | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | planned |
 | PWA mode — add-to-home-screen, offline shell, Web Push notifications, touch gestures | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | planned |
 | `crypto.randomUUID` polyfill for plain-HTTP origins (LAN) | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | planned |

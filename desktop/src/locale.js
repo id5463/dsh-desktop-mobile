@@ -4,6 +4,7 @@ const locales = {
     // 菜单
     menu_dsh: 'DSH Desktop',
     menu_remote_connection: '远程连接...',
+    menu_providers: '供应商管理...',
     menu_restart_server: '重启 DSH 服务器',
     menu_quit: '退出',
     menu_edit: '编辑',
@@ -87,6 +88,7 @@ const locales = {
   en: {
     menu_dsh: 'DSH Desktop',
     menu_remote_connection: 'Remote Connection...',
+    menu_providers: 'Provider Manager...',
     menu_restart_server: 'Restart DSH Server',
     menu_quit: 'Quit',
     menu_edit: 'Edit',

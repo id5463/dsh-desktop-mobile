@@ -101,6 +101,8 @@ android/   Android 应用（Java WebView、本地代理、二维码扫描、mDNS
 | 任务完成系统通知（点击聚焦窗口） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **已实现**（轮询 `session.list`） |
 | 托盘一键重启 DSH（杀进程树后重新拉起） | [dsh-desktop-windowos](https://github.com/RAFOLIE/dsh-desktop-windowos) | **已实现** |
 | 移动端体验——44px 触控目标、全宽布局、`crypto.randomUUID` polyfill、断线自动重连 | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **已实现** |
+| LLM 供应商管理器——多供应商列表、一键激活、端点测速 + 模型发现 | [cc-switch](https://github.com/farion1231/cc-switch) | **已实现**（菜单 → 供应商管理） |
+| 冷启动鲁棒性——DSH CLI 用真实 node 运行（非 Electron）、渲染进程自愈、崩溃循环防护 | — | **已实现** |
 | 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
 | PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
 | 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |
