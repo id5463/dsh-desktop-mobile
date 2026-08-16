@@ -81,6 +81,7 @@ blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫
 
 ## 路线图
 
+- [ ] **dshd Green**——守护/救援 CLI（[独立仓库](https://github.com/id5463/dshd-green)，稍后内嵌进 Red）
 - [ ] 自有中继服务器（通过自己的基础设施做 WAN 中转）
 - [ ] iOS 应用
 - [ ] 把远程/网关功能打包成可安装的 `dsh` 插件（`dsh plugin add`）

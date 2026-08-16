@@ -81,6 +81,7 @@ blue/  dshd Blue — Android app (Java WebView, local proxy, QR scanner, mDNS, W
 
 ## Roadmap
 
+- [ ] **dshd Green** — guardian/rescue CLI ([standalone repo](https://github.com/id5463/dshd-green), embedded in Red later)
 - [ ] Own relay server (WAN relay through your own infrastructure)
 - [ ] iOS app
 - [ ] Package the remote/gateway as an installable `dsh` plugin (`dsh plugin add`)
