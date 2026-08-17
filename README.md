@@ -81,7 +81,7 @@ blue/  dshd Blue — Android app (Java WebView, local proxy, QR scanner, mDNS, W
 
 ## Roadmap
 
-- [ ] **dshd Green** — guardian/rescue CLI ([standalone repo](https://github.com/id5463/dshd-green), embedded in Red later)
+- [x] **dshd Green** — guardian/rescue CLI ([standalone repo](https://github.com/id5463/dshd-green), embedded in Red: sidebar → Guardian)
 - [ ] Own relay server (WAN relay through your own infrastructure)
 - [ ] iOS app
 - [ ] Package the remote/gateway as an installable `dsh` plugin (`dsh plugin add`)
@@ -106,6 +106,8 @@ We benchmarked the DSH desktop & mobile ecosystem and are adopting the best feat
 | Cold-start robustness — DSH CLI runs on real Node (not Electron), renderer self-heal, crash-loop guard | — | **shipped** |
 | Integrated desktop shell — sidebar with live DSH status + one-click access to remote/providers/plugin market/gateway/restart | — | **shipped** |
 | Plugin market — browse 1200+ community plugins, one-click install via official CLI | [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) · [dsh-market](https://github.com/dsh-market/dsh-market) | **shipped** (menu → Plugin Market) |
+| Conversation isolation — per-conversation enable/disable of skills / MCP / plugins (per-session preset derivation; applies immediately to blank sessions, locked for started ones and reusable for new sessions) | reuses DSH preset / skill-filesystem / mcp-client mechanisms | **shipped** (sidebar → Isolation) |
+| Session import & migrate — one-click install dsh-claude-move, migrate from Claude Code / Codex / OpenCode / Hermes | [dsh-claude-move](https://www.npmjs.com/package/dsh-claude-move) | **shipped** (sidebar → Import & Migrate) |
 | Security hardening — random loopback port, sandbox, navigation restrictions | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | planned |
 | PWA mode — add-to-home-screen, offline shell, Web Push notifications, touch gestures | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | planned |
 | `crypto.randomUUID` polyfill for plain-HTTP origins (LAN) | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | planned |

@@ -56,6 +56,8 @@
     <input id="search" placeholder="搜索名称/描述…">
     <select id="category">
       <option value="">全部分类</option>
+      <option value="__installed">✅ 已安装</option>
+      <option value="__featured">⭐ 推荐</option>
       <option value="ui">UI 增强 (213)</option>
       <option value="usage">用量统计 (66)</option>
       <option value="theme">主题皮肤 (47)</option>
@@ -88,6 +90,13 @@
     let installed = []
     let installing = false
 
+    // 推荐插件 (动态管理三件套 + 迁移导入)
+    const FEATURED = ['dsh-plugin-toggle', 'dsh-mcp-manager', 'dsh-skill-picker', 'dsh-claude-move', 'claude2dsh']
+
+    function isInstalled(p) {
+      return installed.includes(p.name) || (p.install && installed.some((n) => p.install.includes(n)))
+    }
+
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
     function setStatus(t, err) { statusEl.textContent = t; statusEl.className = 'status' + (err ? ' err' : '') }
@@ -100,14 +109,15 @@
     function render() {
       const q = document.getElementById('search').value.trim().toLowerCase()
       const cat = document.getElementById('category').value
-      const filtered = all.filter((p) =>
-        (!cat || p.category === cat) &&
-        (!q || (p.name + ' ' + p.desc).toLowerCase().includes(q)))
+      let filtered = all.filter((p) => (!q || (p.name + ' ' + p.desc).toLowerCase().includes(q)))
+      if (cat === '__installed') filtered = filtered.filter(isInstalled)
+      else if (cat === '__featured') filtered = filtered.filter((p) => FEATURED.some((f) => (p.install || '').includes(f) || p.name === f))
+      else if (cat) filtered = filtered.filter((p) => p.category === cat)
       document.getElementById('showCount').textContent = filtered.length + ' 个'
       document.getElementById('totalCount').textContent = String(all.length)
       const shown = filtered.slice(0, 300)
       listEl.innerHTML = shown.map((p) => {
-        const isInstalled = installed.includes(p.name) || (p.install && installed.some((n) => p.install.includes(n)))
+        const inst = isInstalled(p)
         return `<div class="card" data-install="${esc(p.install || '')}">
           <div class="info">
             <div class="name">${esc(p.name)} <span class="badge">${esc(catName(p.category))}</span>${p.stars >= 100 ? '<span class="badge hot">⭐' + p.stars + '</span>' : ''}</div>
@@ -115,12 +125,13 @@
             <div class="meta">${p.install.replace(/^dsh plugin --profile web add /, '')}${p.url ? ' · <a class="replink" data-url="' + esc(p.url) + '" href="#">仓库 ↗</a>' : ''}</div>
           </div>
           <div class="actions">
-            ${isInstalled
+            ${inst
               ? '<span class="installed">✓ 已安装</span><button class="small secondary act-remove">移除</button>'
               : '<button class="small act-install">安装</button>'}
           </div>
         </div>`
       }).join('')
+      if (!shown.length) listEl.innerHTML = '<div class="count" style="padding:20px;text-align:center">（无匹配插件）</div>'
       if (filtered.length > shown.length) listEl.innerHTML += '<div class="count">还有 ' + (filtered.length - shown.length) + ' 个，输入关键词过滤查看更多</div>'
       // 事件委托
       listEl.querySelectorAll('.act-install').forEach((b) => b.onclick = () => install(b.closest('.card').dataset.install))

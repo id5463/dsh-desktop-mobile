@@ -90,6 +90,18 @@ const locales = {
 
     // 安全网关
     gateway_title: '安全网关',
+
+    // 迁移导入
+    migrate_title: '迁移导入',
+    migrate_install_msg: '需要先安装迁移插件 dsh-claude-move，现在安装？',
+    migrate_done_msg: '迁移插件已就绪',
+
+    // 守护
+    guardian_title: '守护者',
+
+    // 对话隔离
+    isolation_title: '对话隔离',
+    menu_isolation: '对话隔离...',
   },
 
   en: {
@@ -171,6 +183,15 @@ const locales = {
     market_title: 'Plugin Market',
 
     gateway_title: 'Secure Gateway',
+
+    migrate_title: 'Import & Migrate',
+    migrate_install_msg: 'The migration plugin dsh-claude-move is required. Install it now?',
+    migrate_done_msg: 'Migration plugin ready',
+
+    guardian_title: 'Guardian',
+
+    isolation_title: 'Conversation Isolation',
+    menu_isolation: 'Conversation Isolation...',
   },
 }
 

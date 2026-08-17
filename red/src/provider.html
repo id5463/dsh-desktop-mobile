@@ -187,6 +187,7 @@
           <div class="row">
             <div>
               <span class="name">${esc(p.name)}</span>
+              ${p.source === 'dsh' ? '<span class="badge">来自 DSH 配置</span>' : ''}
               ${p.active ? '<span class="badge">✓ 当前使用</span>' : '<span class="badge off">未激活</span>'}
             </div>
             <div class="actions">

@@ -81,7 +81,7 @@ blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫
 
 ## 路线图
 
-- [ ] **dshd Green**——守护/救援 CLI（[独立仓库](https://github.com/id5463/dshd-green)，稍后内嵌进 Red）
+- [x] **dshd Green**——守护/救援 CLI（[独立仓库](https://github.com/id5463/dshd-green)，已内嵌进 Red：侧栏 → 守护）
 - [ ] 自有中继服务器（通过自己的基础设施做 WAN 中转）
 - [ ] iOS 应用
 - [ ] 把远程/网关功能打包成可安装的 `dsh` 插件（`dsh plugin add`）
@@ -106,6 +106,8 @@ blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫
 | 冷启动鲁棒性——DSH CLI 用真实 node 运行（非 Electron）、渲染进程自愈、崩溃循环防护 | — | **已实现** |
 | 一体化桌面壳——侧边栏实时 DSH 状态 + 远程/供应商/插件市场/网关/重启一键入口 | — | **已实现** |
 | 插件市场——浏览 1200+ 社区插件，官方 CLI 一键安装 | [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) · [dsh-market](https://github.com/dsh-market/dsh-market) | **已实现**（菜单 → 插件市场） |
+| 对话隔离——按会话启停 技能 / MCP / 插件（会话级 preset 派生，空白会话立即生效，已有内容会话锁定并可用于新会话） | 复用 DSH preset / skill-filesystem / mcp-client 机制 | **已实现**（侧栏 → 对话隔离） |
+| 会话迁移导入——一键安装 dsh-claude-move，从 Claude Code / Codex / OpenCode / Hermes 迁移 | [dsh-claude-move](https://www.npmjs.com/package/dsh-claude-move) | **已实现**（侧栏 → 迁移导入） |
 | 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
 | PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
 | 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |

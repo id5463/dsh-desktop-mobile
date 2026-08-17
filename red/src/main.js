@@ -926,8 +926,47 @@ function dshRpc(method, payload) {
   })
 }
 
+/** 从 DSH settings.yaml 自动发现已配置的供应商 (llm-pi-ai.providers.*) + 匹配 .credentials.yaml 的 key */
+function discoverDshProviders() {
+  const fs = require('fs')
+  const home = dshHome()
+  let settingsText = ''
+  let credsText = ''
+  try { settingsText = fs.readFileSync(path.join(home, 'settings.yaml'), 'utf8') } catch (e) {}
+  try { credsText = fs.readFileSync(path.join(home, '.credentials.yaml'), 'utf8') } catch (e) {}
+  const creds = {}
+  for (const m of credsText.matchAll(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+?)\s*$/gm)) {
+    creds[m[1]] = String(m[2]).replace(/^["']|["']$/g, '')
+  }
+  const out = []
+  const provMatch = settingsText.match(/llm-pi-ai:\s*\n(\s+)providers:\s*\n([\s\S]*?)(?=\n\S+\s*:|$)/)
+  if (provMatch) {
+    const block = provMatch[2]
+    const re = /^(\s{4})([A-Za-z0-9_.-]+):\s*\n/gm
+    let m
+    while ((m = re.exec(block))) {
+      const id = m[2]
+      const rest = block.slice(m.index + m[0].length)
+      const endMatch = rest.match(/\n\s{4}\S+:|\n\s{2}\S+:|\n\S/)
+      const seg = endMatch ? rest.slice(0, endMatch.index) : rest
+      const baseURL = (seg.match(/baseURL:\s*(\S+)/) || [])[1] || ''
+      const api = (seg.match(/api:\s*(\S+)/) || [])[1] || 'openai-completions'
+      const env = (seg.match(/apiKeyEnv:\s*(\S+)/) || [])[1] || ''
+      const models = [...seg.matchAll(/-\s*id:\s*(\S+)/g)].map((x) => x[1])
+      if (baseURL) out.push({ id, name: id, baseURL, api, models, apiKey: creds[env] || '', source: 'dsh' })
+    }
+  }
+  return out
+}
+
 function providersList() {
-  return (store.get('providers') || []).map((p) => ({
+  const saved = store.get('providers') || []
+  const list = saved.map((p) => ({ ...p, source: 'self' }))
+  // 自动发现 DSH 已配置的供应商, 未在本地列表中的自动补上 (来源标注 dsh)
+  for (const d of discoverDshProviders()) {
+    if (!list.some((x) => x.id === d.id)) list.push(d)
+  }
+  return list.map((p) => ({
     ...p,
     apiKey: p.apiKey ? '****' + p.apiKey.slice(-4) : '',
   }))
@@ -1074,7 +1113,9 @@ function patchDefaultModel(provider, model) {
 ipcMain.handle('provider-apply', async (_e, id) => {
   try {
     const list = store.get('providers') || []
-    const p = list.find((x) => x.id === id)
+    let p = list.find((x) => x.id === id)
+    // 自动发现的 DSH 供应商不在本地 store: 从 DSH 配置里取
+    if (!p) p = discoverDshProviders().find((x) => x.id === id)
     if (!p) return { ok: false, error: 'not-found' }
     if (!p.apiKey) return { ok: false, error: 'apiKey required' }
     const apiKeyEnv = p.id.toUpperCase().replace(/[^A-Z0-9_]/g, '_') + '_API_KEY'
@@ -1276,6 +1317,441 @@ function createMarketWindow() {
   marketWindow.loadFile(path.join(__dirname, 'market.html'), { query: { lang } })
   marketWindow.on('closed', () => { marketWindow = null })
   return marketWindow
+}
+
+// ====== 对话隔离 (按会话管理外部依赖: 技能 / MCP / 插件) ======
+//
+// 机制 (DSH 原生): 每个会话由一个 preset (agent.cordis.yml) 组合其插件、提示词和技能目录。
+// Red 为每个会话派生一份 preset (red-iso-<sessionId>) 写入 $DSH_HOME/.agent-presets/,
+// 空白会话用 agentPreset.select 热切换, 新会话在 session.create 时指定。
+//   - 技能: 把 skill-filesystem 行改成白名单模式 (includeDefaultRoots:false +
+//     customSkillDirs 指向 Red 管理的 junction 目录), 该会话只见启用的技能 (skill.list 按会话寻址)
+//   - MCP: 追加 @deepseek-ai/dsh-mcp-client 行 (每个服务器一行, serverName 加会话短号,
+//     mcp-client 的 serverName 在整进程内必须唯一)
+//   - 插件: 追加插件行 (name 用 profile node_modules 里包入口的绝对路径, 预设行支持绝对路径)
+// 已有内容的会话被 DSH 锁定 (agent-preset-locked), 隔离配置保留, 可在新会话/分叉会话生效。
+
+let isolationWindow = null
+
+/** 会话隔离 preset 的 id (DSH 预设目录名, 须匹配 ^[a-z0-9][a-z0-9-]*$) */
+function isoPresetId(sessionId) {
+  return 'red-iso-' + String(sessionId).replace(/[^a-z0-9-]/g, '-')
+}
+
+/** 该会话技能白名单根目录 (Red 管理的 junction/复制目录) */
+function isoSkillDir(sessionId) {
+  return require('path').join(app.getPath('userData'), 'isolation', isoPresetId(sessionId), 'skills')
+}
+
+/** YAML 标量: 安全的裸值直接输出, 否则单引号包裹 (内部单引号翻倍) */
+function yamlScalar(v) {
+  const s = String(v == null ? '' : v)
+  if (/^[A-Za-z0-9_@./-]+$/.test(s) && !/^(true|false|null|yes|no|on|off|[-+]?\d)/i.test(s)) return s
+  return "'" + s.replace(/'/g, "''") + "'"
+}
+
+function yamlKey(k) {
+  const s = String(k)
+  return /^[A-Za-z0-9_-]+$/.test(s) ? s : yamlScalar(s)
+}
+
+/** 技能来源根 (与 dsh-skill-filesystem 的 roots() 对齐) */
+function skillSourceRoots(cwd) {
+  const path = require('path')
+  const os = require('os')
+  const home = dshHome()
+  const roots = []
+  if (cwd) {
+    roots.push({ dir: path.join(cwd, '.dsh', 'skills'), kind: 'project-dsh' })
+    roots.push({ dir: path.join(cwd, '.agents', 'skills'), kind: 'project-agents' })
+  }
+  roots.push({ dir: path.join(home, 'skills'), kind: 'user-dsh' })
+  roots.push({ dir: path.join(os.homedir(), '.agents', 'skills'), kind: 'user-agents' })
+  const bundled = process.env.DSH_BUNDLED_SKILL_DIR
+  if (bundled) roots.push({ dir: bundled, kind: 'bundled' })
+  return roots
+}
+
+/** 按名字找到某个技能的源 (目录技能 <name>/SKILL.md 或扁平 <name>.md), 找不到返回 null */
+function findSkillSource(name, cwd) {
+  const fs = require('fs')
+  const path = require('path')
+  for (const { dir } of skillSourceRoots(cwd)) {
+    try {
+      const dirSkill = path.join(dir, name)
+      if (fs.existsSync(path.join(dirSkill, 'SKILL.md'))) return { kind: 'dir', path: dirSkill }
+      const fileSkill = path.join(dir, name + '.md')
+      if (fs.existsSync(fileSkill)) return { kind: 'file', path: fileSkill }
+    } catch (e) { /* 根目录不可读则跳过 */ }
+  }
+  return null
+}
+
+/** 重建某会话的技能白名单目录: 清空后 junction(Windows 免管理员)/复制启用的技能, 返回未找到项 */
+function syncSkillWhitelist(sessionId, names, cwd) {
+  const fs = require('fs')
+  const path = require('path')
+  const dir = isoSkillDir(sessionId)
+  fs.rmSync(dir, { recursive: true, force: true })
+  fs.mkdirSync(dir, { recursive: true })
+  const missing = []
+  for (const name of names) {
+    const src = findSkillSource(name, cwd)
+    if (!src) { missing.push(name); continue }
+    const dest = path.join(dir, name)
+    try {
+      if (src.kind === 'dir') {
+        try { fs.symlinkSync(src.path, dest, 'junction') }
+        catch (e) { fs.cpSync(src.path, dest, { recursive: true }) }
+      } else {
+        fs.copyFileSync(src.path, dest + '.md')
+      }
+    } catch (e) { missing.push(name + ' (失败: ' + e.message + ')') }
+  }
+  return missing
+}
+
+/** 把组合文本里的 skill-filesystem 行替换为白名单模式; 若没有该行 (如 minimal) 则追加并补齐 tool-skill */
+function patchSkillFilesystemRow(text, skillDir) {
+  const path = require('path')
+  const dir = String(skillDir).replace(/\\/g, '/')
+  const newRow = [
+    '- id: skill-filesystem',
+    "  name: '@deepseek-ai/dsh-skill-filesystem'",
+    '  config:',
+    '    includeDefaultRoots: false',
+    '    customSkillDirs:',
+    "      - '" + dir.replace(/'/g, "''") + "'",
+  ].join('\n')
+  const lines = text.split(/\r?\n/)
+  let start = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (/^- id: skill-filesystem\s*$/.test(lines[i])) { start = i; break }
+  }
+  if (start === -1) {
+    let out = text.trimEnd() + '\n'
+    if (!/^- id: tool-skill\s*$/m.test(text)) {
+      out += "\n# 技能目录 + 加载工具 (由 dshd Red 对话隔离追加)\n- id: tool-skill\n  name: '@deepseek-ai/dsh-tool-skill'\n"
+    }
+    return out + '\n# skill-filesystem: 白名单模式 (由 dshd Red 对话隔离改写)\n' + newRow + '\n'
+  }
+  let end = lines.length
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^- /.test(lines[i])) { end = i; break }
+  }
+  return lines.slice(0, start).concat(newRow, lines.slice(end)).join('\n')
+}
+
+/** 生成该会话启用的 MCP 服务器行 (serverName 加会话短号, 保证整进程唯一) */
+function mcpRowsFor(sessionId, enabledIds) {
+  const servers = (store.get('mcpServers') || []).filter((s) => enabledIds.includes(s.id))
+  const short = String(sessionId).replace(/[^a-z0-9]/gi, '').slice(-6).toLowerCase()
+  return servers.map((s) => {
+    const base = String(s.serverName || s.id || 'mcp').replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 22)
+    const serverName = (base + '-' + short).slice(0, 32)
+    const lines = ['- id: mcp-' + serverName, "  name: '@deepseek-ai/dsh-mcp-client'", '  config:']
+    lines.push('    transport: ' + (s.transport === 'streamable-http' ? 'streamable-http' : 'stdio'))
+    lines.push('    serverName: ' + yamlScalar(serverName))
+    if (s.transport === 'streamable-http') {
+      lines.push('    url: ' + yamlScalar(String(s.url || '')))
+      const hdrs = (s.headers && typeof s.headers === 'object') ? s.headers : {}
+      const hk = Object.keys(hdrs)
+      if (hk.length) {
+        lines.push('    headers:')
+        for (const k of hk) lines.push('      ' + yamlKey(k) + ': ' + yamlScalar(String(hdrs[k])))
+      }
+    } else {
+      lines.push('    command: ' + yamlScalar(String(s.command || '')))
+      const args = Array.isArray(s.args) ? s.args.map(String).filter(Boolean) : []
+      if (args.length) {
+        lines.push('    args:')
+        for (const a of args) lines.push('      - ' + yamlScalar(a))
+      }
+      const env = (s.env && typeof s.env === 'object') ? s.env : {}
+      const ek = Object.keys(env)
+      if (ek.length) {
+        lines.push('    env:')
+        for (const k of ek) lines.push('      ' + yamlKey(k) + ': ' + yamlScalar(String(env[k])))
+      }
+      if (s.cwd) lines.push('    cwd: ' + yamlScalar(String(s.cwd)))
+    }
+    if (s.timeoutMs) lines.push('    toolCallTimeoutMs: ' + Number(s.timeoutMs))
+    return lines.join('\n')
+  })
+}
+
+/** 解析 profile node_modules 里某包名的插件入口 (exports.import / main / index.js), 返回绝对路径或 null */
+function resolvePluginEntry(name) {
+  const fs = require('fs')
+  const path = require('path')
+  try {
+    const pkgDir = path.join(dshHome(), 'profiles', 'web', 'node_modules', name)
+    const pkgFile = path.join(pkgDir, 'package.json')
+    if (!fs.existsSync(pkgFile)) return null
+    const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'))
+    let rel = null
+    const ex = pkg.exports && pkg.exports['.']
+    if (typeof ex === 'string') rel = ex
+    else if (ex && typeof ex === 'object') {
+      const imp = ex.import
+      if (typeof imp === 'string') rel = imp
+      else if (imp && typeof imp.default === 'string') rel = imp.default
+      else if (typeof ex.default === 'string') rel = ex.default
+    }
+    if (!rel) rel = pkg.main || 'index.js'
+    if (!rel.startsWith('.')) rel = './' + rel
+    const abs = path.join(pkgDir, rel)
+    return fs.existsSync(abs) ? abs : null
+  } catch (e) { return null }
+}
+
+/** 生成该会话启用的插件行 (name 用绝对入口路径, 预设行解析支持绝对路径) */
+function pluginRowsFor(names) {
+  const rows = []
+  for (const name of names) {
+    if (!name) continue
+    const entry = resolvePluginEntry(name)
+    const slug = String(name).replace(/[@/\\\s]/g, '-').replace(/^-+/, '').slice(0, 24) || 'plugin'
+    const lines = ['- id: iso-plugin-' + slug]
+    if (entry) lines.push('  name: ' + yamlScalar(entry.replace(/\\/g, '/')))
+    else lines.push('  name: ' + yamlScalar(name))
+    rows.push(lines.join('\n'))
+  }
+  return rows
+}
+
+/** 把组合文本里的某顶层行禁用 (插入 disabled: true)。用于 cordis 基础预设的单实例自省工具集。 */
+function disableRowBlock(text, rowId) {
+  const lines = text.split(/\r?\n/)
+  let start = -1
+  for (let i = 0; i < lines.length; i++) {
+    if (new RegExp('^- id: ' + rowId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$').test(lines[i])) { start = i; break }
+  }
+  if (start === -1) return text
+  let nameAt = -1
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^- /.test(lines[i])) break
+    if (/^\s+name:/.test(lines[i])) { nameAt = i; break }
+  }
+  if (nameAt === -1) return text
+  for (let i = start + 1; i < nameAt; i++) {
+    if (/^\s+disabled:/.test(lines[i])) return text // 已禁用
+  }
+  lines.splice(nameAt + 1, 0, '  disabled: true')
+  return lines.join('\n')
+}
+
+/** 派生隔离预设的组合文本: 基础预设原文 + 技能行改写 + 追加 MCP/插件行 (不删除任何基础功能) */
+function deriveIsolationPreset(baseText, opts) {
+  let text = String(baseText || '')
+  if (opts.skillIsolation && opts.skillDir) text = patchSkillFilesystemRow(text, opts.skillDir)
+  // 基础预设里只能全进程单实例的行 (cordis 的自省工具集): 派生副本里禁用, 基础预设原样保留
+  for (const rowId of SINGLE_INSTANCE_ROWS[opts.base] || []) text = disableRowBlock(text, rowId)
+  const appends = []
+  if (opts.mcpRows && opts.mcpRows.length) appends.push(...opts.mcpRows)
+  if (opts.pluginRows && opts.pluginRows.length) appends.push(...opts.pluginRows)
+  if (appends.length) {
+    text = text.trimEnd() + '\n'
+    for (const row of appends) text += '\n# 外部依赖 (由 dshd Red 对话隔离追加)\n' + row + '\n'
+  }
+  return text
+}
+
+/** 全进程只能挂载一次的预设行 (注册进程级服务, 见 cordis-host-runner 的 inspect 注册表) */
+const SINGLE_INSTANCE_ROWS = { cordis: ['tool-cordis'] }
+
+/** 保存某会话的隔离状态 (UI 复选回显用) */
+function saveIsoState(sessionId, req) {
+  const state = store.get('isolation') || {}
+  state[sessionId] = {
+    base: req.base,
+    skillIsolation: !!req.skillIsolation,
+    skills: req.skills || [],
+    mcp: req.mcp || [],
+    plugins: req.plugins || [],
+    updatedAt: Date.now(),
+  }
+  store.set('isolation', state)
+}
+
+function briefRpc(r) {
+  if (!r) return '无响应'
+  if (r.result && !r.result.ok) {
+    const e = r.result.error
+    if (e && e.message) return e.message
+    return JSON.stringify(e || r.result)
+  }
+  return JSON.stringify(r).slice(0, 300)
+}
+
+/** 派生并落盘隔离预设, 返回 {presetId, content, skillMissing, wrote} */
+async function materializeIsolationPreset(sessionId, req) {
+  const path = require('path')
+  const fs = require('fs')
+  const rr = await dshRpc('agentPreset.read', { agentPreset: req.base })
+  if (!rr || !rr.result || !rr.result.ok) {
+    return { error: '读取基础预设失败: ' + briefRpc(rr) }
+  }
+  const baseText = rr.result.value.content
+  const skillIsolation = !!req.skillIsolation && Array.isArray(req.skills) && req.skills.length > 0
+  const skillMissing = []
+  let skillDir = null
+  if (skillIsolation) {
+    skillDir = isoSkillDir(sessionId)
+    skillMissing.push(...syncSkillWhitelist(sessionId, req.skills, req.cwd))
+  }
+  const mcpRows = mcpRowsFor(sessionId, req.mcp || [])
+  const pluginRows = pluginRowsFor(req.plugins || [])
+  if (!skillIsolation && !mcpRows.length && !pluginRows.length) {
+    return { wrote: false, presetId: null, skillMissing, skillIsolation: false }
+  }
+  const content = deriveIsolationPreset(baseText, { base: req.base, skillIsolation, skillDir, mcpRows, pluginRows })
+  const presetId = isoPresetId(sessionId)
+  const dir = path.join(dshHome(), '.agent-presets', presetId)
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, 'agent.cordis.yml'), content)
+  const title = String(req.title || '会话').replace(/[\\\n\r]/g, ' ').trim().slice(0, 24) || '会话'
+  fs.writeFileSync(path.join(dir, 'preset.yml'),
+    'name: ' + yamlScalar('隔离·' + title) + '\n' +
+    'description: dshd Red 分对话隔离 (技能/MCP/插件)\n' +
+    'order: 9999\n')
+  return { wrote: true, presetId, content, skillMissing, skillIsolation }
+}
+
+ipcMain.handle('isolation-list', async () => {
+  const [sr, pr] = await Promise.all([dshRpc('session.list', {}), dshRpc('agentPreset.list', {})])
+  const unwrap = (r) => (r && r.result && r.result.ok) ? r.result.value : null
+  const sessions = ((unwrap(sr) || {}).items || []).map((s) => ({
+    sessionId: s.sessionId,
+    title: (s.projections && s.projections.values && s.projections.values.title) || null,
+    running: !!s.running,
+    blank: !!s.blank,
+    preset: s.agentPreset || null,
+    cwd: s.cwd || null,
+  }))
+  const presets = ((unwrap(pr) || {}).presets || []).map((p) => ({
+    id: p.id, name: p.name || p.id, trust: p.trust, isDefault: !!p.isDefault,
+    description: p.description || '',
+  }))
+  return { ok: true, sessions, presets, state: store.get('isolation') || {} }
+})
+
+ipcMain.handle('isolation-session-skills', async (_e, sessionId) => {
+  const r = await dshRpc('skill.list', { sessionId: String(sessionId) })
+  const v = (r && r.result && r.result.ok) ? r.result.value : null
+  return { ok: true, skills: v ? v.skills.map((s) => ({ name: s.name, description: s.description, modelInvocable: s.modelInvocable })) : [] }
+})
+
+const FEATURED_ISOLATION_PLUGINS = ['dsh-plugin-toggle', 'dsh-mcp-manager', 'dsh-skill-picker', 'dsh-claude-move', 'claude2dsh']
+
+ipcMain.handle('isolation-plugin-catalog', async () => {
+  const installed = installedPlugins()
+  let bundles = []
+  try {
+    const pkg = JSON.parse(require('fs').readFileSync(require('path').join(dshHome(), 'profiles', 'web', 'package.json'), 'utf8'))
+    bundles = (pkg.dsh && pkg.dsh.profile && pkg.dsh.profile.bundles) || []
+  } catch (e) {}
+  const seen = new Set()
+  const plugins = []
+  for (const n of [...installed, ...FEATURED_ISOLATION_PLUGINS]) {
+    if (seen.has(n)) continue
+    seen.add(n)
+    plugins.push({
+      name: n,
+      installed: installed.includes(n),
+      global: bundles.includes(n),
+      featured: FEATURED_ISOLATION_PLUGINS.includes(n),
+      entry: resolvePluginEntry(n),
+    })
+  }
+  return { ok: true, plugins }
+})
+
+ipcMain.handle('isolation-mcp-list', () => ({ ok: true, servers: store.get('mcpServers') || [] }))
+
+ipcMain.handle('isolation-mcp-save', (_e, servers) => {
+  store.set('mcpServers', Array.isArray(servers) ? servers : [])
+  return { ok: true }
+})
+
+/** 按会话安装插件: 直接 pnpm add 进 profile (不走 dsh plugin 的 bundle 对账, 不全局挂载) */
+ipcMain.handle('isolation-install-dep', (_e, pkg) => {
+  return new Promise((resolve) => {
+    const path = require('path')
+    const profileDir = path.join(dshHome(), 'profiles', 'web')
+    const child = spawn('pnpm', ['add', String(pkg)], {
+      cwd: profileDir, shell: process.platform === 'win32', stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let out = ''
+    child.stdout.on('data', (d) => { out += d.toString() })
+    child.stderr.on('data', (d) => { out += d.toString() })
+    child.on('error', (e) => resolve({ ok: false, error: e.message, output: out }))
+    child.on('exit', (code) => resolve({ ok: code === 0, code, output: out.slice(-2000) }))
+  })
+})
+
+/** 应用到会话: 派生预设 → 落盘 → agentPreset.select (空白会话可切换; 非空白返回 locked, 配置保留) */
+ipcMain.handle('isolation-apply', async (_e, req) => {
+  try {
+    const sessionId = String(req.sessionId)
+    const m = await materializeIsolationPreset(sessionId, req)
+    if (m.error) return { ok: false, error: m.error }
+    if (!m.wrote) {
+      // 无任何隔离项: 直接切回基础预设 (重置)
+      const sel = await dshRpc('agentPreset.select', { sessionId, agentPreset: req.base })
+      if (sel && sel.result && sel.result.ok) { saveIsoState(sessionId, req); return { ok: true, reset: true, presetId: req.base } }
+      return { ok: false, locked: true, error: briefRpc(sel) }
+    }
+    const sel = await dshRpc('agentPreset.select', { sessionId, agentPreset: m.presetId })
+    if (sel && sel.result && sel.result.ok) {
+      saveIsoState(sessionId, req)
+      return { ok: true, presetId: m.presetId, skillMissing: m.skillMissing }
+    }
+    const err = sel && sel.result && sel.result.error
+    const code = err && err.code
+    const msg = (err && err.message) || briefRpc(sel)
+    if (code === 'agent-preset-locked') {
+      saveIsoState(sessionId, req)
+      return { ok: false, locked: true, presetId: m.presetId, error: msg }
+    }
+    return { ok: false, error: msg, presetId: m.presetId, skillMissing: m.skillMissing }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+/** 以某隔离配置新建会话: 生成 sessionId → 派生预设 → session.create {sessionId, agentPreset} */
+ipcMain.handle('isolation-new-session', async (_e, req) => {
+  try {
+    const crypto = require('crypto')
+    const sessionId = 'session-' + crypto.randomUUID()
+    const m = await materializeIsolationPreset(sessionId, req)
+    if (m.error) return { ok: false, error: m.error }
+    if (!m.wrote) {
+      const cr = await dshRpc('session.create', { sessionId, agentPreset: req.base })
+      if (cr && cr.result && cr.result.ok) { saveIsoState(sessionId, req); return { ok: true, sessionId, presetId: req.base } }
+      return { ok: false, error: briefRpc(cr) }
+    }
+    const cr = await dshRpc('session.create', { sessionId, agentPreset: m.presetId })
+    if (cr && cr.result && cr.result.ok) {
+      saveIsoState(sessionId, req)
+      return { ok: true, sessionId, presetId: m.presetId, skillMissing: m.skillMissing }
+    }
+    return { ok: false, error: briefRpc(cr), presetId: m.presetId, skillMissing: m.skillMissing }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+/** 对话隔离窗口 */
+function createIsolationWindow() {
+  isolationWindow = new BrowserWindow({
+    width: 1080,
+    height: 720,
+    resizable: true,
+    title: t('isolation_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  isolationWindow.loadFile(path.join(__dirname, 'isolation.html'), { query: { lang } })
+  isolationWindow.on('closed', () => { isolationWindow = null })
+  return isolationWindow
 }
 
 // ====== 安全网关窗口 (状态/启停/文件传输入口) ======
@@ -1490,10 +1966,84 @@ ipcMain.on('shell-action', (event, which) => {
     case 'conn': createConnectionWindow(); break
     case 'providers': createProviderWindow(); break
     case 'market': createMarketWindow(); break
+    case 'isolation': createIsolationWindow(); break
+    case 'extras': createMarketWindow(); break // 扩展管理 = 市场(已安装视图)
     case 'gateway': createGatewayWindow(); break
+    case 'guardian': createGuardianWindow(); break
+    case 'migrate': setupMigrateImport(); break
     case 'restart': restartDsh(); break
   }
 })
+
+/** 迁移导入: 一键安装 dsh-claude-move (若未装), 提示在 DSH 界面用 /move 向导 */
+async function setupMigrateImport() {
+  try {
+    const installed = installedPlugins()
+    const hasMove = installed.some((n) => n.includes('claude-move') || n.includes('claude2dsh'))
+    if (!hasMove) {
+      const ok = await dialog.showMessageBox(mainWindow, {
+        type: 'question', title: t('migrate_title'),
+        message: t('migrate_install_msg'),
+        detail: 'dsh-claude-move — 从 Claude Code / Codex / OpenCode / Hermes 迁移会话、记忆、技能、指令',
+        buttons: [t('update_go'), t('update_later')],
+      })
+      if (ok.response !== 0) return
+      const r = await runPluginCommand(['plugin', '--profile', 'web', 'add', 'dsh-claude-move'], null)
+      if (!r.ok) {
+        dialog.showMessageBox(mainWindow, { type: 'error', title: t('migrate_title'), message: '安装失败: ' + (r.error || r.output || '') })
+        return
+      }
+    }
+    dialog.showMessageBox(mainWindow, {
+      type: 'info', title: t('migrate_title'),
+      message: t('migrate_done_msg'),
+      detail: '在右侧 DSH 界面输入 /move 打开迁移向导；或输入 /claude2dsh 使用双向同步（Claude Code）。',
+    })
+  } catch (e) {
+    dialog.showMessageBox(mainWindow, { type: 'error', title: t('migrate_title'), message: e.message })
+  }
+}
+
+// ====== 守护 (内置 dshd Green) ======
+
+let guardianWindow = null
+
+/** 运行内置 dshd-green CLI (vendor 在 src/guardian), 返回输出 */
+function runGreen(args) {
+  return new Promise((resolve) => {
+    const cli = path.join(__dirname, 'guardian', 'dshd-green-cli.js')
+    const env = { ...process.env, DSH_HOME: dshHome(), ELECTRON_RUN_AS_NODE: '1' }
+    const child = spawn(process.execPath, [cli, ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+    let out = ''
+    const push = (t) => {
+      out += t
+      if (guardianWindow && !guardianWindow.isDestroyed()) guardianWindow.webContents.send('guardian-line', t)
+    }
+    child.stdout.on('data', (d) => push(d.toString()))
+    child.stderr.on('data', (d) => push(d.toString()))
+    child.on('error', (e) => resolve({ ok: false, error: e.message, output: out }))
+    child.on('exit', (code) => resolve({ ok: code === 0, code, output: out }))
+  })
+}
+
+ipcMain.handle('guardian-run', async (_e, cmd) => {
+  const args = String(cmd || 'status').split(' ')
+  return await runGreen(args)
+})
+
+function createGuardianWindow() {
+  guardianWindow = new BrowserWindow({
+    width: 620,
+    height: 560,
+    resizable: true,
+    title: t('guardian_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  guardianWindow.loadFile(path.join(__dirname, 'guardian.html'), { query: { lang } })
+  guardianWindow.on('closed', () => { guardianWindow = null })
+  return guardianWindow
+}
 
 let lastShellStatus = null
 function pushShellStatus() {
@@ -1510,6 +2060,7 @@ function buildMenu() {
         { label: t('menu_remote_connection'), accelerator: 'CmdOrCtrl+R', click: () => createConnectionWindow() },
         { label: t('menu_providers'), accelerator: 'CmdOrCtrl+P', click: () => createProviderWindow() },
         { label: t('menu_plugins'), accelerator: 'CmdOrCtrl+Shift+P', click: () => createMarketWindow() },
+        { label: t('menu_isolation'), accelerator: 'CmdOrCtrl+Shift+I', click: () => createIsolationWindow() },
         { type: 'separator' },
         { label: t('menu_restart_server'), accelerator: 'CmdOrCtrl+Shift+R', click: () => restartDsh() },
         { type: 'separator' },

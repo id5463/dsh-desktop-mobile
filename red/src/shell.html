@@ -11,41 +11,53 @@
     background: transparent; /* 内容区透明, DSH UI 由 WebContentsView 绘制 */
     color: #e0e0e0;
   }
-  /* ===== 左侧边栏 (dshd Red) ===== */
+  /* ===== 左侧边栏 (dshd Red 红色主题) ===== */
   #sidebar {
-    width: 210px; height: 100%; background: #16213e;
-    display: flex; flex-direction: column; padding: 16px 12px;
-    border-right: 1px solid #0f3460;
+    width: 220px; height: 100%; background: linear-gradient(180deg, #3a0d0d 0%, #2a0a0a 40%, #1a1016 100%);
+    display: flex; flex-direction: column; padding: 0;
+    border-right: 2px solid #dc3545;
   }
-  .brand { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 2px; }
-  .brand .red { color: #dc3545; }
-  .brand-sub { font-size: 11px; color: #888; margin-bottom: 14px; }
+  .brand-block {
+    background: linear-gradient(135deg, #dc3545, #8e1f2b);
+    padding: 16px 14px 14px;
+  }
+  .brand { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+  .brand .red { color: #ffd9d9; }
+  .brand-sub { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 2px; }
   .status-pill {
-    font-size: 12px; padding: 6px 10px; border-radius: 8px; margin-bottom: 14px;
-    background: #b71c1c; color: #ef9a9a; display: flex; align-items: center; gap: 6px;
+    margin: 12px 12px 10px; font-size: 12px; padding: 7px 10px; border-radius: 8px;
+    background: #5c1616; color: #ffb4b4; display: flex; align-items: center; gap: 6px;
+    border: 1px solid #dc3545;
   }
-  .status-pill.online { background: #1b5e20; color: #81c784; }
+  .status-pill.online { background: #143d1f; color: #81c784; border-color: #28a745; }
   .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-  nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  nav { display: flex; flex-direction: column; gap: 3px; flex: 1; padding: 0 10px; }
   nav button {
     border: none; border-radius: 8px; padding: 10px 12px; font-size: 13px;
-    color: #c8c8d0; background: transparent; cursor: pointer; text-align: left;
-    display: flex; align-items: center; gap: 8px;
+    color: #e8c8c8; background: transparent; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 9px; transition: background 0.15s;
   }
-  nav button:hover { background: #0f3460; color: #fff; }
-  .foot { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.6; }
+  nav button:hover { background: #dc3545; color: #fff; }
+  nav button:active { background: #b3261e; }
+  .foot { font-size: 11px; color: #a07070; margin: 8px 14px 12px; line-height: 1.6; }
 </style>
 </head>
 <body>
   <div id="sidebar">
-    <div class="brand">dshd <span class="red">Red</span></div>
-    <div class="brand-sub">DeepSeek Harness 桌面端</div>
+    <div class="brand-block">
+      <div class="brand">dshd <span class="red">Red</span></div>
+      <div class="brand-sub">DeepSeek Harness 桌面端</div>
+    </div>
     <div class="status-pill offline" id="statusPill"><span class="dot"></span><span id="statusText">DSH 未运行</span></div>
     <nav>
       <button data-act="conn">📡 远程连接</button>
       <button data-act="providers">🔑 供应商管理</button>
       <button data-act="market">🧩 插件市场</button>
+      <button data-act="isolation">🔒 对话隔离</button>
+      <button data-act="extras">⚙️ 扩展管理</button>
       <button data-act="gateway">🛡️ 安全网关</button>
+      <button data-act="guardian">🛟 守护 (Green)</button>
+      <button data-act="migrate">🚚 迁移导入</button>
       <button data-act="restart">🔄 重启 DSH</button>
     </nav>
     <div class="foot" id="foot">会话: -<br>端口: -</div>
