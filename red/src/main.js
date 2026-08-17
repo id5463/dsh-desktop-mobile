@@ -1118,6 +1118,134 @@ ipcMain.handle('provider-test', async (_e, provider) => {
   } catch (e) { return { ok: false, error: e.message } }
 })
 
+// ====== 插件市场 (数据源: awesome-dsh-plugin.com/plugins.json) ======
+
+const MARKET_CATALOG_URL = 'https://awesome-dsh-plugin.com/plugins.json'
+const MARKET_CACHE_TTL = 6 * 3600 * 1000 // 目录 6 小时缓存
+let marketWindow = null
+
+function marketCache() {
+  try { return store.get('market_catalog') || null } catch (e) { return null }
+}
+
+/** 拉取插件目录 (带缓存), 失败时用旧缓存 */
+function fetchMarketCatalog() {
+  return new Promise((resolve) => {
+    const cached = marketCache()
+    if (cached && Date.now() - cached.fetchedAt < MARKET_CACHE_TTL) return resolve(cached.plugins)
+    const req = https.get(MARKET_CATALOG_URL, {
+      headers: { 'user-agent': 'dshd-red/' + APP_VERSION, accept: 'application/json' },
+      timeout: 15000,
+    }, (res) => {
+      let d = ''
+      res.on('data', (c) => { d += c; if (d.length > 8 * 1024 * 1024) res.destroy() })
+      res.on('end', () => {
+        try {
+          const j = JSON.parse(d)
+          const plugins = j.plugins || []
+          store.set('market_catalog', { fetchedAt: Date.now(), plugins })
+          resolve(plugins)
+        } catch (e) { resolve(cached ? cached.plugins : null) }
+      })
+    })
+    req.on('error', () => resolve(cached ? cached.plugins : null))
+    req.on('timeout', () => { try { req.destroy() } catch (e) {} resolve(cached ? cached.plugins : null) })
+    req.end()
+  })
+}
+
+/** 已安装插件: 读 profile 的 package.json dependencies (pnpm add 写入) */
+function installedPlugins() {
+  try {
+    const pkg = require('fs').readFileSync(require('path').join(dshHome(), 'profiles', 'web', 'package.json'), 'utf8')
+    return Object.keys(JSON.parse(pkg).dependencies || {})
+  } catch (e) { return [] }
+}
+
+/** 运行 dsh plugin 命令 (用真实 node + 本地 CLI; 打包含 path 用 npx) */
+function runPluginCommand(args, onLine) {
+  return new Promise(async (resolve) => {
+    let runtime = null
+    try { runtime = await findNodeRuntime() } catch (e) {}
+    const devDsh = findDshCommand()
+    let command, commandArgs, shell = false
+    if (devDsh !== 'dsh' && devDsh.endsWith('.js')) {
+      command = (runtime && runtime.node) || 'node'
+      commandArgs = [devDsh, ...args]
+    } else if (devDsh !== 'dsh') {
+      command = devDsh
+      commandArgs = args
+    } else if (runtime) {
+      command = runtime.npm || 'npm'
+      commandArgs = ['exec', '-y', '@deepseek-ai/dsh', ...args]
+      shell = process.platform === 'win32'
+    } else {
+      command = 'dsh'
+      commandArgs = args
+    }
+    const env = { ...process.env, DSH_HOME: dshHome() }
+    const child = spawn(command, commandArgs, { env, shell, stdio: ['ignore', 'pipe', 'pipe'] })
+    let out = ''
+    const push = (t) => { if (t && t.trim()) { out += t; if (onLine) onLine(t.trimEnd()) } }
+    child.stdout.on('data', (d) => push(d.toString()))
+    child.stderr.on('data', (d) => push(d.toString()))
+    child.on('error', (e) => resolve({ ok: false, error: e.message, output: out }))
+    child.on('exit', (code) => resolve({ ok: code === 0, code, output: out }))
+  })
+}
+
+ipcMain.handle('market-catalog', async () => {
+  const plugins = await fetchMarketCatalog()
+  if (!plugins) return { ok: false, error: '无法获取插件目录 (网络/缓存为空)' }
+  return {
+    ok: true,
+    plugins: plugins.map((p) => ({
+      name: p.name,
+      category: p.category || 'other',
+      desc: (p.description && (p.description.zh || p.description.en)) || '',
+      stars: p.stars || 0,
+      install: p.install || '',
+      url: p.url || '',
+      added: p.added || '',
+    })),
+  }
+})
+
+ipcMain.handle('market-install', async (event, installCmd) => {
+  try {
+    if (!installCmd) return { ok: false, error: 'no install command' }
+    // 只允许官方格式: dsh plugin --profile web add <pkg>
+    const m = installCmd.match(/^dsh plugin --profile web (add|remove) (.+)$/)
+    if (!m) return { ok: false, error: '非官方安装命令: ' + installCmd }
+    const action = m[1]
+    const target = m[2].trim()
+    const send = (line) => { if (marketWindow && !marketWindow.isDestroyed()) marketWindow.webContents.send('market-install-line', line) }
+    send('$ dsh plugin --profile web ' + action + ' ' + target)
+    const r = await runPluginCommand(['plugin', '--profile', 'web', action, target], send)
+    send(r.ok ? '✅ ' + (action === 'add' ? '安装完成' : '已移除') : '❌ 失败 (exit ' + r.code + ')')
+    return { ok: r.ok, code: r.code, output: r.output }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+ipcMain.handle('market-installed', () => ({ ok: true, installed: installedPlugins() }))
+
+ipcMain.handle('market-clear-cache', () => { store.delete('market_catalog'); return { ok: true } })
+
+/** 插件市场窗口 */
+function createMarketWindow() {
+  marketWindow = new BrowserWindow({
+    width: 900,
+    height: 700,
+    resizable: true,
+    title: t('market_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  marketWindow.loadFile(path.join(__dirname, 'market.html'), { query: { lang } })
+  marketWindow.on('closed', () => { marketWindow = null })
+  return marketWindow
+}
+
 // ====== 窗口管理 ======
 
 /** 供应商管理窗口 (功能参考 cc-switch, MIT) */
@@ -1228,6 +1356,7 @@ function buildMenu() {
       submenu: [
         { label: t('menu_remote_connection'), accelerator: 'CmdOrCtrl+R', click: () => createConnectionWindow() },
         { label: t('menu_providers'), accelerator: 'CmdOrCtrl+P', click: () => createProviderWindow() },
+        { label: t('menu_plugins'), accelerator: 'CmdOrCtrl+Shift+P', click: () => createMarketWindow() },
         { type: 'separator' },
         { label: t('menu_restart_server'), accelerator: 'CmdOrCtrl+Shift+R', click: () => restartDsh() },
         { type: 'separator' },

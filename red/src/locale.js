@@ -5,6 +5,7 @@ const locales = {
     menu_dsh: 'dshd Red',
     menu_remote_connection: '远程连接...',
     menu_providers: '供应商管理...',
+    menu_plugins: '插件市场...',
     menu_restart_server: '重启 DSH 服务器',
     menu_quit: '退出',
     menu_edit: '编辑',
@@ -83,12 +84,16 @@ const locales = {
 
     // 应用标题
     app_title: 'dshd Red',
+
+    // 插件市场
+    market_title: '插件市场',
   },
 
   en: {
     menu_dsh: 'dshd Red',
     menu_remote_connection: 'Remote Connection...',
     menu_providers: 'Provider Manager...',
+    menu_plugins: 'Plugin Market...',
     menu_restart_server: 'Restart DSH Server',
     menu_quit: 'Quit',
     menu_edit: 'Edit',
@@ -159,6 +164,8 @@ const locales = {
     error_hint: 'Start DSH: dsh --profile web',
 
     app_title: 'dshd Red',
+
+    market_title: 'Plugin Market',
   },
 }
 
