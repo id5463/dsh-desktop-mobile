@@ -2008,11 +2008,42 @@ async function setupMigrateImport() {
 
 let guardianWindow = null
 
+/** 运行内置 dshd-green CLI, 不向窗口推送 (结构化 JSON 用), 返回输出 */
+function runGreenSilent(args) {
+  return new Promise((resolve) => {
+    const cli = path.join(__dirname, 'guardian', 'dshd-green-cli.js')
+    const env = { ...process.env, DSH_HOME: dshHome(), ELECTRON_RUN_AS_NODE: '1' }
+    try {
+      const libCli = path.join(__dirname, '..', '..', '..', 'apps', 'cli', 'lib', 'bin.js')
+      if (require('fs').existsSync(libCli)) env.DSH_GREEN_DSH = 'node ' + libCli
+      else {
+        const devDsh = findDshCommand()
+        if (devDsh !== 'dsh' && devDsh.endsWith('.js')) env.DSH_GREEN_DSH = 'node ' + devDsh
+      }
+    } catch (e) { /* 默认 npx */ }
+    const child = spawn(process.execPath, [cli, ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+    let out = ''
+    child.stdout.on('data', (d) => { out += d.toString() })
+    child.stderr.on('data', (d) => { out += d.toString() })
+    child.on('error', (e) => resolve({ ok: false, error: e.message, output: out }))
+    child.on('exit', (code) => resolve({ ok: code === 0, code, output: out }))
+  })
+}
+
 /** 运行内置 dshd-green CLI (vendor 在 src/guardian), 返回输出 */
 function runGreen(args) {
   return new Promise((resolve) => {
     const cli = path.join(__dirname, 'guardian', 'dshd-green-cli.js')
     const env = { ...process.env, DSH_HOME: dshHome(), ELECTRON_RUN_AS_NODE: '1' }
+    // 救援进程的 dsh CLI: 开发环境指向本仓库编译版 CLI (无需 tsx), 生产环境走 npx 独立安装
+    try {
+      const libCli = path.join(__dirname, '..', '..', '..', 'apps', 'cli', 'lib', 'bin.js')
+      if (require('fs').existsSync(libCli)) env.DSH_GREEN_DSH = 'node ' + libCli
+      else {
+        const devDsh = findDshCommand()
+        if (devDsh !== 'dsh' && devDsh.endsWith('.js')) env.DSH_GREEN_DSH = 'node ' + devDsh
+      }
+    } catch (e) { /* 默认 npx */ }
     const child = spawn(process.execPath, [cli, ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] })
     let out = ''
     const push = (t) => {
@@ -2027,8 +2058,19 @@ function runGreen(args) {
 }
 
 ipcMain.handle('guardian-run', async (_e, cmd) => {
-  const args = String(cmd || 'status').split(' ')
+  // 兼容字符串 (空格分割) 和数组 (多词参数如救援问题描述)
+  const args = Array.isArray(cmd) ? cmd.map(String) : String(cmd || 'status').split(' ')
   return await runGreen(args)
+})
+
+ipcMain.handle('guardian-json', async (_e, args) => {
+  const r = await runGreenSilent([...(Array.isArray(args) ? args : String(args || 'status').split(' ')), '--json'])
+  try {
+    const lines = r.output.trim().split(/\r?\n/).filter(Boolean)
+    return { ok: true, json: JSON.parse(lines[lines.length - 1]) }
+  } catch (e) {
+    return { ok: false, error: r.error || 'JSON 解析失败', output: r.output }
+  }
 })
 
 function createGuardianWindow() {

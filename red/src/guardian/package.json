@@ -1,11 +1,11 @@
 {
     "name":  "dshd-green",
-    "version":  "0.1.0",
-    "description":  "dshd Green — the guardian: rescue & diagnostics for DeepSeek Harness (DSH). A lifeboat for your DSH.",
+    "version":  "0.3.0",
+    "description":  "dshd Green 鈥?the guardian: rescue \u0026 diagnostics for DeepSeek Harness (DSH). A lifeboat for your DSH.",
     "main":  "src/index.js",
     "bin":  {
-               "dshd-green":  "bin/dshd-green.js"
-           },
+                "dshd-green":  "bin/dshd-green.js"
+            },
     "files":  [
                   "bin",
                   "src"
@@ -25,6 +25,6 @@
     "license":  "MIT",
     "type":  "commonjs",
     "engines":  {
-                   "node":  ">=18"
-               }
+                    "node":  "\u003e=18"
+                }
 }
