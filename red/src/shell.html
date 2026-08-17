@@ -8,18 +8,18 @@
   html, body { height: 100%; overflow: hidden; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1a1a2e; color: #e0e0e0;
-    display: flex;
+    background: transparent; /* 内容区透明, DSH UI 由 WebContentsView 绘制 */
+    color: #e0e0e0;
   }
   /* ===== 左侧边栏 (dshd Red) ===== */
   #sidebar {
-    width: 210px; flex-shrink: 0; background: #16213e;
+    width: 210px; height: 100%; background: #16213e;
     display: flex; flex-direction: column; padding: 16px 12px;
     border-right: 1px solid #0f3460;
   }
   .brand { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 2px; }
   .brand .red { color: #dc3545; }
-  .brand-sub { font-size: 11px; color: #666; margin-bottom: 14px; }
+  .brand-sub { font-size: 11px; color: #888; margin-bottom: 14px; }
   .status-pill {
     font-size: 12px; padding: 6px 10px; border-radius: 8px; margin-bottom: 14px;
     background: #b71c1c; color: #ef9a9a; display: flex; align-items: center; gap: 6px;
@@ -33,19 +33,7 @@
     display: flex; align-items: center; gap: 8px;
   }
   nav button:hover { background: #0f3460; color: #fff; }
-  .foot { font-size: 11px; color: #555; margin-top: 10px; line-height: 1.6; }
-  /* ===== 右侧内容 ===== */
-  #content { flex: 1; position: relative; background: #0f0f1e; }
-  webview { position: absolute; inset: 0; width: 100%; height: 100%; }
-  #fallback {
-    position: absolute; inset: 0; display: none; flex-direction: column;
-    align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px;
-  }
-  #fallback .big { font-size: 42px; }
-  #fallback button {
-    border: none; border-radius: 8px; padding: 10px 22px; font-size: 14px;
-    color: #fff; cursor: pointer; background: #dc3545;
-  }
+  .foot { font-size: 11px; color: #666; margin-top: 10px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -62,59 +50,20 @@
     </nav>
     <div class="foot" id="foot">会话: -<br>端口: -</div>
   </div>
-  <div id="content">
-    <webview id="dsview" webpreferences="contextIsolation=no"></webview>
-    <div id="fallback">
-      <div class="big">🛟</div>
-      <div>无法连接 DSH 服务器</div>
-      <button id="retryBtn">重新连接</button>
-    </div>
-  </div>
 
   <script>
-    // shell 页面: 通过 preload 暴露的 window.dshdShell 与主进程通信
+    // 壳侧栏: DSH UI 由主进程的 WebContentsView 绘制在内容区
     const shell = window.dshdShell
     const params = new URLSearchParams(window.location.search)
-    const dshUrl = params.get('dsUrl') || 'http://127.0.0.1:3080'
     const port = params.get('port') || '3080'
-    const webview = document.getElementById('dsview')
     const statusPill = document.getElementById('statusPill')
     const statusText = document.getElementById('statusText')
-    const fallback = document.getElementById('fallback')
     const foot = document.getElementById('foot')
 
-    function showFallback(show) {
-      fallback.style.display = show ? 'flex' : 'none'
-      webview.style.display = show ? 'none' : 'block'
-    }
-
-    // 加载 DSH UI
-    function loadDs() {
-      webview.src = dshUrl
-    }
-    webview.addEventListener('did-start-loading', () => {
-      statusText.textContent = '加载中…'
-      statusPill.className = 'status-pill'
-    })
-    webview.addEventListener('did-finish-load', () => {
-      statusText.textContent = 'DSH 运行中'
-      statusPill.className = 'status-pill online'
-      showFallback(false)
-    })
-    webview.addEventListener('did-fail-load', () => {
-      showFallback(true)
-      statusText.textContent = 'DSH 未运行'
-      statusPill.className = 'status-pill offline'
-    })
-
-    document.getElementById('retryBtn').onclick = () => { showFallback(false); loadDs() }
-
-    // 侧栏按钮
     document.querySelectorAll('nav button').forEach((b) => {
       b.onclick = () => shell.action(b.dataset.act)
     })
 
-    // 主进程推送的 DSH 状态
     shell.onStatus((st) => {
       if (st && typeof st.online === 'boolean') {
         const online = st.online
@@ -125,7 +74,6 @@
     })
 
     foot.textContent = '端口: ' + port
-    loadDs()
   </script>
 </body>
 </html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e; color: #e0e0e0; padding: 24px;
+  }
+  h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+  .subtitle { font-size: 12px; color: #a0a0b0; margin-bottom: 16px; }
+  .card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 13px; }
+  .row .k { color: #a0a0b0; }
+  .row .v { color: #fff; word-break: break-all; text-align: right; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 10px; }
+  .badge.on { background: #1b5e20; color: #81c784; }
+  .badge.off { background: #b71c1c; color: #ef9a9a; }
+  .badge.up { background: #1b5e20; color: #81c784; }
+  .badge.down { background: #b71c1c; color: #ef9a9a; }
+  button {
+    border: none; border-radius: 8px; padding: 9px 16px; font-size: 13px;
+    color: #fff; cursor: pointer; background: #dc3545;
+  }
+  button.secondary { background: #0f3460; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; }
+  .url-box {
+    background: #0f0f1e; border-radius: 6px; padding: 8px 10px; font-family: monospace;
+    font-size: 11px; color: #81c784; word-break: break-all; margin-top: 6px;
+  }
+  .device { font-size: 12px; color: #a0a0b0; padding: 4px 0; border-bottom: 1px solid #0f3460; }
+  .device:last-child { border-bottom: none; }
+  .status { margin-top: 10px; font-size: 12px; color: #81c784; min-height: 16px; }
+  .status.err { color: #ef9a9a; }
+</style>
+</head>
+<body>
+  <h1>🛡️ 安全网关 / Secure Gateway</h1>
+  <p class="subtitle">手机浏览器/文件传输的安全入口（token 鉴权，集成自 dsh-Remote, MIT）</p>
+
+  <div class="toolbar">
+    <button id="startBtn">▶ 启动网关</button>
+    <button id="stopBtn" class="secondary">⏹ 停止网关</button>
+    <button id="refreshBtn" class="secondary">🔄 刷新</button>
+  </div>
+
+  <div class="card">
+    <div class="row"><span class="k">网关状态</span><span class="v"><span class="badge off" id="gwState">未知</span></span></div>
+    <div class="row"><span class="k">版本 / 运行时长</span><span class="v" id="gwVer">-</span></div>
+    <div class="row"><span class="k">DSH 上游</span><span class="v" id="gwUp">-</span></div>
+    <div class="row"><span class="k">请求 / 设备</span><span class="v" id="gwReq">-</span></div>
+    <div class="row"><span class="k">访问令牌</span><span class="v" id="gwToken">-</span></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:flex-start"><span class="k">📂 手机浏览器文件传输</span></div>
+    <div class="url-box" id="fsUrl">-</div>
+    <div class="row" style="margin-top:8px"><span class="k">📋 管理 API</span></div>
+    <div class="url-box" id="adminUrl">-</div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:flex-start"><span class="k">📱 已连接设备</span></div>
+    <div id="devices" style="margin-top:8px"><div class="device">（无）</div></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const { ipcRenderer } = require('electron')
+    const statusEl = document.getElementById('status')
+
+    function setStatus(t, err) { statusEl.textContent = t; statusEl.className = 'status' + (err ? ' err' : '') }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+
+    async function refresh() {
+      const r = await ipcRenderer.invoke('gateway-status')
+      if (!r.ok) { setStatus('❌ ' + (r.error || '网关状态获取失败'), true); return }
+      const s = r.state || {}
+      const online = !!s.online
+      document.getElementById('gwState').textContent = online ? '运行中' : '已停止'
+      document.getElementById('gwState').className = 'badge ' + (online ? 'on' : 'off')
+      document.getElementById('gwVer').textContent = s.version || '-'
+      document.getElementById('gwUp').textContent = s.upstream && s.upstream.reachable != null
+        ? (s.upstream.reachable ? '✅ 可达' : '❌ 不可达') : '-'
+      document.getElementById('gwReq').textContent = (s.totalRequests || 0) + ' 请求 / ' + (s.deviceCount || 0) + ' 设备'
+      document.getElementById('gwToken').textContent = s.tokenMasked || '-'
+      document.getElementById('fsUrl').textContent = s.fsUrl || '-'
+      document.getElementById('adminUrl').textContent = s.adminUrl || '-'
+      const devs = (s.devices || []).slice(0, 8)
+      document.getElementById('devices').innerHTML = devs.length
+        ? devs.map((d) => '<div class="device">' + esc(d.ip) + ' · ' + esc(d.kind || 'browser') + (d.online ? ' · 在线' : '') + ' · ' + (d.requests || 0) + ' 请求</div>').join('')
+        : '<div class="device">（无）</div>'
+      setStatus('')
+    }
+
+    document.getElementById('refreshBtn').onclick = refresh
+    document.getElementById('startBtn').onclick = async () => {
+      setStatus('启动网关…')
+      const r = await ipcRenderer.invoke('gateway-toggle', true)
+      setStatus(r.ok ? '✅ 网关已启动' : '❌ ' + (r.error || '失败'), !r.ok)
+      refresh()
+    }
+    document.getElementById('stopBtn').onclick = async () => {
+      setStatus('停止网关…')
+      const r = await ipcRenderer.invoke('gateway-toggle', false)
+      setStatus(r.ok ? '⏹ 网关已停止' : '❌ ' + (r.error || '失败'), !r.ok)
+      refresh()
+    }
+
+    refresh()
+    setInterval(refresh, 5000)
+  </script>
+</body>
+</html>

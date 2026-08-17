@@ -87,6 +87,9 @@ const locales = {
 
     // 插件市场
     market_title: '插件市场',
+
+    // 安全网关
+    gateway_title: '安全网关',
   },
 
   en: {
@@ -166,6 +169,8 @@ const locales = {
     app_title: 'dshd Red',
 
     market_title: 'Plugin Market',
+
+    gateway_title: 'Secure Gateway',
   },
 }
 

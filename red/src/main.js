@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, dialog, shell, nativeImage, ipcMain } = require('electron')
+const { app, BrowserWindow, Menu, Tray, dialog, shell, nativeImage, ipcMain, WebContentsView } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const http = require('http')
@@ -33,6 +33,7 @@ function t(key) { return (locales[lang] || locales.zh)[key] || key }
 function setLang(l) { lang = l; store.set('lang', l) }
 
 let mainWindow = null
+let dshView = null
 let p2pBridge = null
 let tray = null
 let dshProcess = null
@@ -734,7 +735,15 @@ let gatewayRestartTimer = null
 let gatewayStopping = false
 let gatewayCrashCount = 0
 
-function gatewayToken() { return store.get('remoteToken') }
+function gatewayToken() {
+  // 缺失时生成并持久化, 保证应用与网关用同一个 token (旧 store 可能为空)
+  let t = store.get('remoteToken')
+  if (!t) {
+    t = 'tk-' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
+    store.set('remoteToken', t)
+  }
+  return t
+}
 function gatewayPort() { return store.get('gatewayPort') || 8787 }
 
 /** 启动 dsh-Remote 网关子进程 (token 鉴权 + /fs/* 文件传输 + 设备管理 + 更新检查)
@@ -1127,8 +1136,25 @@ const MARKET_CATALOG_URL = 'https://awesome-dsh-plugin.com/plugins.json'
 const MARKET_CACHE_TTL = 6 * 3600 * 1000 // 目录 6 小时缓存
 let marketWindow = null
 
+// 目录缓存存文件 (不塞 electron-store, 避免 config.json 膨胀到近 1MB)
+function marketCacheFile() {
+  try { return require('path').join(app.getPath('userData'), 'market-catalog.json') } catch (e) { return null }
+}
+
 function marketCache() {
-  try { return store.get('market_catalog') || null } catch (e) { return null }
+  try {
+    const f = marketCacheFile()
+    if (!f || !require('fs').existsSync(f)) return null
+    return JSON.parse(require('fs').readFileSync(f, 'utf8'))
+  } catch (e) { return null }
+}
+
+function marketCacheSave(plugins) {
+  try {
+    const f = marketCacheFile()
+    if (!f) return
+    require('fs').writeFileSync(f, JSON.stringify({ fetchedAt: Date.now(), plugins }))
+  } catch (e) { /* 缓存失败不影响使用 */ }
 }
 
 /** 拉取插件目录 (带缓存), 失败时用旧缓存 */
@@ -1146,7 +1172,7 @@ function fetchMarketCatalog() {
         try {
           const j = JSON.parse(d)
           const plugins = j.plugins || []
-          store.set('market_catalog', { fetchedAt: Date.now(), plugins })
+          marketCacheSave(plugins)
           resolve(plugins)
         } catch (e) { resolve(cached ? cached.plugins : null) }
       })
@@ -1232,7 +1258,10 @@ ipcMain.handle('market-install', async (event, installCmd) => {
 
 ipcMain.handle('market-installed', () => ({ ok: true, installed: installedPlugins() }))
 
-ipcMain.handle('market-clear-cache', () => { store.delete('market_catalog'); return { ok: true } })
+ipcMain.handle('market-clear-cache', () => {
+  try { const f = marketCacheFile(); if (f) require('fs').unlinkSync(f) } catch (e) {}
+  return { ok: true }
+})
 
 /** 插件市场窗口 */
 function createMarketWindow() {
@@ -1247,6 +1276,66 @@ function createMarketWindow() {
   marketWindow.loadFile(path.join(__dirname, 'market.html'), { query: { lang } })
   marketWindow.on('closed', () => { marketWindow = null })
   return marketWindow
+}
+
+// ====== 安全网关窗口 (状态/启停/文件传输入口) ======
+
+let gatewayWindow = null
+
+function httpGetJson(url) {
+  return new Promise((resolve) => {
+    const req = http.get(url, { timeout: 4000 }, (res) => {
+      let d = ''
+      res.on('data', (c) => { d += c; if (d.length > 1024 * 1024) res.destroy() })
+      res.on('end', () => { try { resolve(JSON.parse(d)) } catch (e) { resolve(null) } })
+    })
+    req.on('error', () => resolve(null))
+    req.on('timeout', () => { try { req.destroy() } catch (e) {} resolve(null) })
+  })
+}
+
+ipcMain.handle('gateway-status', async () => {
+  const port = gatewayPort()
+  const token = gatewayToken()
+  const api = 'http://127.0.0.1:' + port + '/admin/api/state?token=' + token
+  const st = await httpGetJson(api)
+  const online = !!(st && st.ok)
+  const lanIp = getLanIp()
+  return {
+    ok: true,
+    state: {
+      online,
+      version: st ? st.version : null,
+      upstream: st ? st.upstream : null,
+      totalRequests: st ? st.totalRequests : 0,
+      deviceCount: st ? st.deviceCount : 0,
+      devices: st ? st.devices || [] : [],
+      tokenMasked: st ? st.tokenMasked : (token ? token.slice(0, 4) + '…' + token.slice(-4) : '-'),
+      fsUrl: 'http://' + lanIp + ':' + port + '/fs/list?token=' + token,
+      adminUrl: api,
+    },
+  }
+})
+
+ipcMain.handle('gateway-toggle', async (_e, on) => {
+  try {
+    if (on) { startRemoteGateway(); return { ok: true } }
+    stopRemoteGateway(); return { ok: true }
+  } catch (e) { return { ok: false, error: e.message } }
+})
+
+function createGatewayWindow() {
+  gatewayWindow = new BrowserWindow({
+    width: 560,
+    height: 640,
+    resizable: true,
+    title: t('gateway_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  gatewayWindow.loadFile(path.join(__dirname, 'gateway.html'), { query: { lang } })
+  gatewayWindow.on('closed', () => { gatewayWindow = null })
+  return gatewayWindow
 }
 
 // ====== 窗口管理 ======
@@ -1309,14 +1398,16 @@ function createWindow() {
   const host = store.get('host')
   const port = store.get('port')
   const url = `http://${host}:${port}`
+  const SIDEBAR = 210
 
-  // 壳窗口: 左侧边栏 (dshd Red 功能入口) + <webview> 承载 DSH Web UI
+  // 壳窗口: 左侧边栏 (dshd Red 功能入口); 右侧用 WebContentsView 承载 DSH Web UI
+  // (WebContentsView 视口可靠跟随 setBounds, 避免 <webview> guest 卡 150px 的问题)
   mainWindow = new BrowserWindow({
     width, height, minWidth: 720, minHeight: 480,
     title: 'dshd Red',
+    backgroundColor: '#0f0f1e',
     webPreferences: {
       nodeIntegration: false, contextIsolation: true,
-      webviewTag: true,
       preload: path.join(__dirname, 'shell-preload.js'),
     },
     show: true,
@@ -1326,9 +1417,49 @@ function createWindow() {
     query: { dsUrl: url, port: String(port) },
   }).catch(() => {})
 
-  // 渲染进程崩溃自愈
+  // DSH UI 视图
+  dshView = new WebContentsView({
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
+    },
+  })
+  mainWindow.contentView.addChildView(dshView)
+
+  let dshRetry = 0
+  const layoutView = () => {
+    const [w, h] = mainWindow.getContentSize()
+    dshView.setBounds({ x: SIDEBAR, y: 0, width: Math.max(0, w - SIDEBAR), height: h })
+  }
+  layoutView()
+  mainWindow.on('resize', layoutView)
+
+  const loadDs = () => {
+    if (isQuitting) return
+    dshView.webContents.loadURL(url).catch(() => { /* did-fail-load 处理 */ })
+  }
+  dshView.webContents.on('did-fail-load', () => {
+    // DSH 未就绪: 隔 3 秒重试 (最多 20 次), 壳侧栏状态灯会显示离线
+    if (isQuitting) return
+    dshRetry++
+    if (dshRetry <= 20) setTimeout(loadDs, 3000)
+  })
+  dshView.webContents.on('did-finish-load', () => { dshRetry = 0 })
+
+  // DSH 视图渲染进程崩溃自愈
+  dshView.webContents.on('render-process-gone', (_event, details) => {
+    console.log('dshd Red: DSH 视图渲染进程退出 (' + details.reason + '), 3 秒后重载')
+    if (isQuitting) return
+    setTimeout(loadDs, 3000)
+  })
+
+  loadDs()
+
+  // 壳自身渲染进程崩溃自愈
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
-    console.log('dshd Red: 渲染进程退出 (' + details.reason + '), 2 秒后自动重载')
+    console.log('dshd Red: 壳渲染进程退出 (' + details.reason + '), 2 秒后自动重载')
     if (isQuitting) return
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1337,7 +1468,10 @@ function createWindow() {
     }, 2000)
   })
 
-  mainWindow.on('closed', () => { mainWindow = null })
+  mainWindow.on('closed', () => {
+    mainWindow = null
+    if (dshView) { try { dshView.webContents.close() } catch (e) {} dshView = null }
+  })
 
   Menu.setApplicationMenu(buildMenu())
 
@@ -1356,7 +1490,7 @@ ipcMain.on('shell-action', (event, which) => {
     case 'conn': createConnectionWindow(); break
     case 'providers': createProviderWindow(); break
     case 'market': createMarketWindow(); break
-    case 'gateway': shell.openExternal('http://127.0.0.1:' + gatewayPort() + '/admin?token=' + gatewayToken()); break
+    case 'gateway': createGatewayWindow(); break
     case 'restart': restartDsh(); break
   }
 })
