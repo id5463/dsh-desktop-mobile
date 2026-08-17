@@ -867,6 +867,9 @@ function pollSessionStatus() {
         }
         // 会话再次运行 -> 重置已通知标记
         for (const sid of notifiedSessions) if (nowRunning.has(sid)) notifiedSessions.delete(sid)
+        // 壳侧栏状态
+        lastShellStatus = { online: true, total: items.length, running: nowRunning.size, port }
+        pushShellStatus()
       } catch (e) { /* 解析失败静默 */ }
     })
   })
@@ -1307,32 +1310,29 @@ function createWindow() {
   const port = store.get('port')
   const url = `http://${host}:${port}`
 
+  // 壳窗口: 左侧边栏 (dshd Red 功能入口) + <webview> 承载 DSH Web UI
   mainWindow = new BrowserWindow({
-    width, height, minWidth: 480, minHeight: 320,
+    width, height, minWidth: 720, minHeight: 480,
     title: 'dshd Red',
     webPreferences: {
       nodeIntegration: false, contextIsolation: true,
-      webSecurity: false, allowRunningInsecureContent: true,
-      preload: path.join(__dirname, 'preload.js'),
+      webviewTag: true,
+      preload: path.join(__dirname, 'shell-preload.js'),
     },
     show: true,
   })
 
-  mainWindow.loadURL(url, { bypassCSP: true }).catch(() => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadFile(path.join(__dirname, 'error.html'), {
-        query: { host, port: String(port) },
-      }).catch(() => {})
-    }
-  })
+  mainWindow.loadFile(path.join(__dirname, 'shell.html'), {
+    query: { dsUrl: url, port: String(port) },
+  }).catch(() => {})
 
-  // 渲染进程崩溃自愈: GPU/缓存等瞬态问题 2 秒后自动重载, 不再让窗口停在死状态
+  // 渲染进程崩溃自愈
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
     console.log('dshd Red: 渲染进程退出 (' + details.reason + '), 2 秒后自动重载')
     if (isQuitting) return
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL(url, { bypassCSP: true }).catch(() => {})
+        mainWindow.loadFile(path.join(__dirname, 'shell.html'), { query: { dsUrl: url, port: String(port) } }).catch(() => {})
       }
     }, 2000)
   })
@@ -1347,6 +1347,25 @@ function createWindow() {
   })
 
   createTray()
+}
+
+// ====== 壳侧栏动作 + DSH 状态推送 ======
+
+ipcMain.on('shell-action', (event, which) => {
+  switch (which) {
+    case 'conn': createConnectionWindow(); break
+    case 'providers': createProviderWindow(); break
+    case 'market': createMarketWindow(); break
+    case 'gateway': shell.openExternal('http://127.0.0.1:' + gatewayPort() + '/admin?token=' + gatewayToken()); break
+    case 'restart': restartDsh(); break
+  }
+})
+
+let lastShellStatus = null
+function pushShellStatus() {
+  if (mainWindow && !mainWindow.isDestroyed() && lastShellStatus) {
+    mainWindow.webContents.send('dsh-status', lastShellStatus)
+  }
 }
 
 function buildMenu() {

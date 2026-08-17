@@ -104,6 +104,8 @@ blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫
 | 移动端体验——44px 触控目标、全宽布局、`crypto.randomUUID` polyfill、断线自动重连 | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **已实现** |
 | LLM 供应商管理器——多供应商列表、一键激活、端点测速 + 模型发现 | [cc-switch](https://github.com/farion1231/cc-switch) | **已实现**（菜单 → 供应商管理） |
 | 冷启动鲁棒性——DSH CLI 用真实 node 运行（非 Electron）、渲染进程自愈、崩溃循环防护 | — | **已实现** |
+| 一体化桌面壳——侧边栏实时 DSH 状态 + 远程/供应商/插件市场/网关/重启一键入口 | — | **已实现** |
+| 插件市场——浏览 1200+ 社区插件，官方 CLI 一键安装 | [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) · [dsh-market](https://github.com/dsh-market/dsh-market) | **已实现**（菜单 → 插件市场） |
 | 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
 | PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
 | 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |

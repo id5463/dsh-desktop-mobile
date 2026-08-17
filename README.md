@@ -104,6 +104,8 @@ We benchmarked the DSH desktop & mobile ecosystem and are adopting the best feat
 | Mobile UI polish — 44px touch targets, full-width layout, `crypto.randomUUID` polyfill, auto-reconnect on network drop | [dsh-web-mobile](https://github.com/mexiaosqwq/dsh-web-mobile) · [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) · [dsh-mobile-css](https://github.com/ook826092-cloud/dsh-mobile-css) | **shipped** |
 | LLM provider manager — multi-provider list, one-click activate, endpoint speed test + model discovery | [cc-switch](https://github.com/farion1231/cc-switch) | **shipped** (menu → Provider Manager) |
 | Cold-start robustness — DSH CLI runs on real Node (not Electron), renderer self-heal, crash-loop guard | — | **shipped** |
+| Integrated desktop shell — sidebar with live DSH status + one-click access to remote/providers/plugin market/gateway/restart | — | **shipped** |
+| Plugin market — browse 1200+ community plugins, one-click install via official CLI | [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) · [dsh-market](https://github.com/dsh-market/dsh-market) | **shipped** (menu → Plugin Market) |
 | Security hardening — random loopback port, sandbox, navigation restrictions | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | planned |
 | PWA mode — add-to-home-screen, offline shell, Web Push notifications, touch gestures | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | planned |
 | `crypto.randomUUID` polyfill for plain-HTTP origins (LAN) | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | planned |
