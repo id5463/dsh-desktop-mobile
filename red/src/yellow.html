@@ -50,7 +50,18 @@
  <div class="hint">init 生成骨架（dsh.json/soul.md/models.json/plugins.json/patches.yaml/mcp.json/presets/），编辑后 pack 产出.dshpack。</div>
  </div>
 
- <div class="out" id="out">（选择整合包加载，或打包工作目录）</div>
+ <div class="panel">
+ <h3>从会话导出整合包</h3>
+ <div class="row">
+  <select id="sessionSel" style="flex:1;padding:8px;border-radius:8px;border:1px solid #4a4218;background:#14120a;color:#fff;font-size:12.5px">
+  <option value="">（加载会话列表…）</option>
+  </select>
+  <button class="secondary" id="exportBtn">导出为整合包</button>
+ </div>
+ <div class="hint">把对话隔离里配好的会话（技能/MCP/插件/人设/模式）一键打成 .dshpack。无来源的技能会进 overrides。</div>
+ </div>
+
+ <div class="out" id="out">（选择整合包加载、从会话导出，或打包工作目录）</div>
  <div class="status" id="status"></div>
 
  <div class="panel" id="packs" style="display:none">
@@ -112,8 +123,20 @@
  list.innerHTML = rows.join('')
  }
 
+ async function loadSessions() {
+ const r = await ipcRenderer.invoke('yellow-sessions')
+ if (!r || !r.ok) return
+ const sel = $('sessionSel')
+ sel.innerHTML = '<option value="">（选择会话）</option>' + r.sessions.map((s) => '<option value="' + s.sessionId + '">' + s.title.slice(0, 40) + ' · ' + s.preset + '</option>').join('')
+ }
+
  $('pickBtn').onclick = async () => { const f = await ipcRenderer.invoke('yellow-pick-pack'); if (f) $('packPath').value = f }
  $('pickDirBtn').onclick = async () => { const d = await ipcRenderer.invoke('yellow-pick-dir', '选择包工作目录'); if (d) $('packDir').value = d }
+ $('exportBtn').onclick = async () => {
+ const sid = $('sessionSel').value
+ if (!sid) { setStatus('请选择要导出的会话', true); return }
+ run(['pack', '--from-session', sid])
+ }
  $('loadBtn').onclick = () => {
  const pack = $('packPath').value.trim()
  if (!pack) { setStatus('请选择整合包文件', true); return }
@@ -136,6 +159,7 @@
  ipcRenderer.on('yellow-line', (_e, line) => { if (line && line.trim()) appendOut(line + '\n') })
 
  refresh()
+ loadSessions()
  </script>
 </body>
 </html>

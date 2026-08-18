@@ -1813,6 +1813,17 @@ ipcMain.handle('yellow-pick-dir', async (_e, title) => {
   return r.canceled || !r.filePaths.length ? null : r.filePaths[0]
 })
 
+ipcMain.handle('yellow-sessions', async () => {
+  const r = await dshRpc('session.list', {})
+  const v = r && r.result && r.result.ok ? r.result.value : null
+  return { ok: true, sessions: ((v || {}).items || []).map((s) => ({
+    sessionId: s.sessionId,
+    title: (s.projections && s.projections.values && s.projections.values.title) || '（未命名会话）',
+    preset: s.agentPreset || '',
+    blank: !!s.blank,
+  })) }
+})
+
 /** 整合包窗口 */
 function createYellowWindow() {
   yellowWindow = new BrowserWindow({
