@@ -4,197 +4,181 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1a1a2e; color: #e0e0e0; padding: 20px;
-  }
-  h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }
-  .subtitle { font-size: 12px; color: #a0a0b0; margin-bottom: 14px; }
-  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-  input, select {
-    padding: 9px 12px; border-radius: 8px; border: 1px solid #0f3460;
-    background: #0f3460; color: #fff; font-size: 13px; outline: none;
-  }
-  input { flex: 1; min-width: 200px; }
-  button {
-    border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px;
-    color: #fff; cursor: pointer; background: #dc3545;
-  }
-  button.secondary { background: #0f3460; }
-  button.small { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
-  button:disabled { opacity: 0.5; cursor: default; }
-  .count { font-size: 12px; color: #a0a0b0; }
-  .warn { font-size: 11px; color: #ef9a9a; margin-bottom: 10px; }
-  .card {
-    background: #16213e; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
-    display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
-  }
-  .card .info { flex: 1; min-width: 0; }
-  .card .name { font-size: 13px; font-weight: 600; color: #fff; word-break: break-all; }
-  .card .desc { font-size: 12px; color: #a0a0b0; margin-top: 4px; line-height: 1.5; }
-  .card .meta { font-size: 11px; color: #666; margin-top: 4px; }
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #3a3f5c; color: #a0a0b0; margin-right: 6px; }
-  .badge.hot { background: #7B1FA2; color: #fff; }
-  .card .actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
-  .installed { color: #81c784; font-size: 12px; }
-  .log {
-    background: #0f0f1e; border-radius: 8px; padding: 10px; margin-top: 12px;
-    font-family: monospace; font-size: 11px; color: #81c784; max-height: 180px;
-    overflow-y: auto; white-space: pre-wrap; word-break: break-all; display: none;
-  }
-  .status { margin-top: 10px; font-size: 12px; color: #81c784; min-height: 16px; }
-  .status.err { color: #ef9a9a; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ background: #1a1a2e; color: #e0e0e0; padding: 20px;
+ }
+ h1 { font-size: 18px; color: #fff; margin-bottom: 4px; }.subtitle { font-size: 12px; color: #a0a0b0; margin-bottom: 14px; }.toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+ input, select {
+ padding: 9px 12px; border-radius: 8px; border: 1px solid #0f3460;
+ background: #0f3460; color: #fff; font-size: 13px; outline: none;
+ }
+ input { flex: 1; min-width: 200px; }
+ button {
+ border: none; border-radius: 8px; padding: 9px 14px; font-size: 13px;
+ color: #fff; cursor: pointer; background: #dc3545;
+ }
+ button.secondary { background: #0f3460; }
+ button.small { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+ button:disabled { opacity: 0.5; cursor: default; }.count { font-size: 12px; color: #a0a0b0; }.warn { font-size: 11px; color: #ef9a9a; margin-bottom: 10px; }.card {
+ background: #16213e; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+ display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+ }.card.info { flex: 1; min-width: 0; }.card.name { font-size: 13px; font-weight: 600; color: #fff; word-break: break-all; }.card.desc { font-size: 12px; color: #a0a0b0; margin-top: 4px; line-height: 1.5; }.card.meta { font-size: 11px; color: #666; margin-top: 4px; }.badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #3a3f5c; color: #a0a0b0; margin-right: 6px; }.badge.hot { background: #7B1FA2; color: #fff; }.card.actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }.installed { color: #81c784; font-size: 12px; }.log {
+ background: #0f0f1e; border-radius: 8px; padding: 10px; margin-top: 12px;
+ font-family: monospace; font-size: 11px; color: #81c784; max-height: 180px;
+ overflow-y: auto; white-space: pre-wrap; word-break: break-all; display: none;
+ }.status { margin-top: 10px; font-size: 12px; color: #81c784; min-height: 16px; }.status.err { color: #ef9a9a; }
 </style>
 </head>
 <body>
-  <h1>🧩 插件市场 / Plugin Market</h1>
-  <p class="subtitle">DSH 社区插件 (awesome-dsh-plugin.com 精选, 共 <span id="totalCount">-</span> 个) · 一键安装, 装进当前 web profile</p>
-  <div class="warn">⚠️ 安装插件会运行第三方代码（拥有你机器的权限）。请只安装你信任的插件。安装后需刷新 DSH Web 页面生效。</div>
+ <h1>插件市场 / Plugin Market</h1>
+ <p class="subtitle">DSH 社区插件 (awesome-dsh-plugin.com 精选, 共 <span id="totalCount">-</span>个) · 一键安装, 装进当前 web profile</p>
+ <div class="warn">警告: 安装插件会运行第三方代码（拥有你机器的权限）。请只安装你信任的插件。安装后需刷新 DSH Web 页面生效。</div>
 
-  <div class="toolbar">
-    <input id="search" placeholder="搜索名称/描述…">
-    <select id="category">
-      <option value="">全部分类</option>
-      <option value="__installed">✅ 已安装</option>
-      <option value="__featured">⭐ 推荐</option>
-      <option value="ui">UI 增强 (213)</option>
-      <option value="usage">用量统计 (66)</option>
-      <option value="theme">主题皮肤 (47)</option>
-      <option value="model">模型 (28)</option>
-      <option value="session">会话 (73)</option>
-      <option value="memory">记忆 (63)</option>
-      <option value="tools">工具 (243)</option>
-      <option value="vision">视觉 (49)</option>
-      <option value="skill">技能 (50)</option>
-      <option value="workflow">工作流 (78)</option>
-      <option value="notify">通知 (79)</option>
-      <option value="dev">开发 (138)</option>
-      <option value="market">市场 (36)</option>
-      <option value="fun">娱乐 (43)</option>
-    </select>
-    <button id="refreshBtn" class="secondary">🔄 刷新</button>
-    <span class="count" id="showCount"></span>
-  </div>
+ <div class="toolbar">
+ <input id="search" placeholder="搜索名称/描述…">
+ <select id="category">
+ <option value="">全部分类</option>
+ <option value="__installed">已安装</option>
+ <option value="__featured">推荐</option>
+ <option value="ui">UI 增强 (213)</option>
+ <option value="usage">用量统计 (66)</option>
+ <option value="theme">主题皮肤 (47)</option>
+ <option value="model">模型 (28)</option>
+ <option value="session">会话 (73)</option>
+ <option value="memory">记忆 (63)</option>
+ <option value="tools">工具 (243)</option>
+ <option value="vision">视觉 (49)</option>
+ <option value="skill">技能 (50)</option>
+ <option value="workflow">工作流 (78)</option>
+ <option value="notify">通知 (79)</option>
+ <option value="dev">开发 (138)</option>
+ <option value="market">市场 (36)</option>
+ <option value="fun">娱乐 (43)</option>
+ </select>
+ <button id="refreshBtn" class="secondary">刷新</button>
+ <span class="count" id="showCount"></span>
+ </div>
 
-  <div id="list"></div>
-  <div class="log" id="log"></div>
-  <div class="status" id="status"></div>
+ <div id="list"></div>
+ <div class="log" id="log"></div>
+ <div class="status" id="status"></div>
 
-  <script>
-    const { ipcRenderer } = require('electron')
-    const listEl = document.getElementById('list')
-    const statusEl = document.getElementById('status')
-    const logEl = document.getElementById('log')
-    let all = []
-    let installed = []
-    let installing = false
+ <script>
+ const { ipcRenderer } = require('electron')
+ const listEl = document.getElementById('list')
+ const statusEl = document.getElementById('status')
+ const logEl = document.getElementById('log')
+ let all = []
+ let installed = []
+ let installing = false
 
-    // 推荐插件 (动态管理三件套 + 迁移导入)
-    const FEATURED = ['dsh-plugin-toggle', 'dsh-mcp-manager', 'dsh-skill-picker', 'dsh-claude-move', 'claude2dsh']
+ // 推荐插件 (动态管理三件套 + 迁移导入)
+ const FEATURED = ['dsh-plugin-toggle', 'dsh-mcp-manager', 'dsh-skill-picker', 'dsh-claude-move', 'claude2dsh']
 
-    function isInstalled(p) {
-      return installed.includes(p.name) || (p.install && installed.some((n) => p.install.includes(n)))
-    }
+ function isInstalled(p) {
+ return installed.includes(p.name) || (p.install && installed.some((n) => p.install.includes(n)))
+ }
 
-    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+ function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
-    function setStatus(t, err) { statusEl.textContent = t; statusEl.className = 'status' + (err ? ' err' : '') }
+ function setStatus(t, err) { statusEl.textContent = t; statusEl.className = 'status' + (err ? ' err' : '') }
 
-    function catName(c) {
-      const map = { ui: 'UI', usage: '用量', theme: '主题', model: '模型', session: '会话', memory: '记忆', tools: '工具', vision: '视觉', skill: '技能', workflow: '工作流', notify: '通知', dev: '开发', market: '市场', fun: '娱乐' }
-      return map[c] || c
-    }
+ function catName(c) {
+ const map = { ui: 'UI', usage: '用量', theme: '主题', model: '模型', session: '会话', memory: '记忆', tools: '工具', vision: '视觉', skill: '技能', workflow: '工作流', notify: '通知', dev: '开发', market: '市场', fun: '娱乐' }
+ return map[c] || c
+ }
 
-    function render() {
-      const q = document.getElementById('search').value.trim().toLowerCase()
-      const cat = document.getElementById('category').value
-      let filtered = all.filter((p) => (!q || (p.name + ' ' + p.desc).toLowerCase().includes(q)))
-      if (cat === '__installed') filtered = filtered.filter(isInstalled)
-      else if (cat === '__featured') filtered = filtered.filter((p) => FEATURED.some((f) => (p.install || '').includes(f) || p.name === f))
-      else if (cat) filtered = filtered.filter((p) => p.category === cat)
-      document.getElementById('showCount').textContent = filtered.length + ' 个'
-      document.getElementById('totalCount').textContent = String(all.length)
-      const shown = filtered.slice(0, 300)
-      listEl.innerHTML = shown.map((p) => {
-        const inst = isInstalled(p)
-        return `<div class="card" data-install="${esc(p.install || '')}">
-          <div class="info">
-            <div class="name">${esc(p.name)} <span class="badge">${esc(catName(p.category))}</span>${p.stars >= 100 ? '<span class="badge hot">⭐' + p.stars + '</span>' : ''}</div>
-            <div class="desc">${esc(p.desc)}</div>
-            <div class="meta">${p.install.replace(/^dsh plugin --profile web add /, '')}${p.url ? ' · <a class="replink" data-url="' + esc(p.url) + '" href="#">仓库 ↗</a>' : ''}</div>
-          </div>
-          <div class="actions">
-            ${inst
-              ? '<span class="installed">✓ 已安装</span><button class="small secondary act-remove">移除</button>'
-              : '<button class="small act-install">安装</button>'}
-          </div>
-        </div>`
-      }).join('')
-      if (!shown.length) listEl.innerHTML = '<div class="count" style="padding:20px;text-align:center">（无匹配插件）</div>'
-      if (filtered.length > shown.length) listEl.innerHTML += '<div class="count">还有 ' + (filtered.length - shown.length) + ' 个，输入关键词过滤查看更多</div>'
-      // 事件委托
-      listEl.querySelectorAll('.act-install').forEach((b) => b.onclick = () => install(b.closest('.card').dataset.install))
-      listEl.querySelectorAll('.act-remove').forEach((b) => b.onclick = () => remove(b.closest('.card').dataset.install))
-      listEl.querySelectorAll('.replink').forEach((a) => a.onclick = () => { require('electron').shell.openExternal(a.dataset.url) })
-    }
+ function render() {
+ const q = document.getElementById('search').value.trim().toLowerCase()
+ const cat = document.getElementById('category').value
+ let filtered = all.filter((p) => (!q || (p.name + ' ' + p.desc).toLowerCase().includes(q)))
+ if (cat === '__installed') filtered = filtered.filter(isInstalled)
+ else if (cat === '__featured') filtered = filtered.filter((p) => FEATURED.some((f) => (p.install || '').includes(f) || p.name === f))
+ else if (cat) filtered = filtered.filter((p) => p.category === cat)
+ document.getElementById('showCount').textContent = filtered.length + ' 个'
+ document.getElementById('totalCount').textContent = String(all.length)
+ const shown = filtered.slice(0, 300)
+ listEl.innerHTML = shown.map((p) => {
+ const inst = isInstalled(p)
+ return `<div class="card" data-install="${esc(p.install || '')}">
+ <div class="info">
+ <div class="name">${esc(p.name)} <span class="badge">${esc(catName(p.category))}</span>${p.stars >= 100 ? '<span class="badge hot">' + p.stars + '</span>' : ''}</div>
+ <div class="desc">${esc(p.desc)}</div>
+ <div class="meta">${p.install.replace(/^dsh plugin --profile web add /, '')}${p.url ? ' · <a class="replink" data-url="' + esc(p.url) + '" href="#">仓库 ↗</a>' : ''}</div>
+ </div>
+ <div class="actions">
+ ${inst
+ ? '<span class="installed">已安装</span><button class="small secondary act-remove">移除</button>'
+ : '<button class="small act-install">安装</button>'}
+ </div>
+ </div>`
+ }).join('')
+ if (!shown.length) listEl.innerHTML = '<div class="count" style="padding:20px;text-align:center">（无匹配插件）</div>'
+ if (filtered.length > shown.length) listEl.innerHTML += '<div class="count">还有 ' + (filtered.length - shown.length) + ' 个，输入关键词过滤查看更多</div>'
+ // 事件委托
+ listEl.querySelectorAll('.act-install').forEach((b) => b.onclick = () => install(b.closest('.card').dataset.install))
+ listEl.querySelectorAll('.act-remove').forEach((b) => b.onclick = () => remove(b.closest('.card').dataset.install))
+ listEl.querySelectorAll('.replink').forEach((a) => a.onclick = () => { require('electron').shell.openExternal(a.dataset.url) })
+ }
 
-    window.install = async function (cmd) {
-      if (!cmd) { setStatus('该插件缺少安装命令', true); return }
-      if (installing) return
-      if (!confirm('⚠️ 安装插件会运行第三方代码（拥有你机器的权限）。\n\n确认执行:\n' + cmd + ' ?')) return
-      installing = true
-      logEl.style.display = 'block'
-      logEl.textContent = ''
-      setStatus('正在安装…')
-      const r = await ipcRenderer.invoke('market-install', cmd)
-      if (r.ok) { setStatus('✅ 安装完成。请刷新 DSH Web 页面 (Ctrl+F5) 生效。'); await refreshInstalled(); render() }
-      else setStatus('❌ ' + (r.error || '安装失败'), true)
-      installing = false
-    }
+ window.install = async function (cmd) {
+ if (!cmd) { setStatus('该插件缺少安装命令', true); return }
+ if (installing) return
+ if (!confirm('警告: 安装插件会运行第三方代码（拥有你机器的权限）。\n\n确认执行:\n' + cmd + ' ?')) return
+ installing = true
+ logEl.style.display = 'block'
+ logEl.textContent = ''
+ setStatus('正在安装…')
+ const r = await ipcRenderer.invoke('market-install', cmd)
+ if (r.ok) { setStatus('安装完成。请刷新 DSH Web 页面 (Ctrl+F5) 生效。'); await refreshInstalled(); render() }
+ else setStatus('失败: ' + (r.error || '安装失败'), true)
+ installing = false
+ }
 
-    window.remove = async function (cmd) {
-      if (installing) return
-      if (!confirm('确认移除插件?\n' + cmd + ' ?')) return
-      installing = true
-      logEl.style.display = 'block'
-      logEl.textContent = ''
-      setStatus('正在移除…')
-      const r = await ipcRenderer.invoke('market-install', cmd)
-      if (r.ok) { setStatus('✅ 已移除'); await refreshInstalled(); render() }
-      else setStatus('❌ ' + (r.error || '移除失败'), true)
-      installing = false
-    }
+ window.remove = async function (cmd) {
+ if (installing) return
+ if (!confirm('确认移除插件?\n' + cmd + ' ?')) return
+ installing = true
+ logEl.style.display = 'block'
+ logEl.textContent = ''
+ setStatus('正在移除…')
+ const r = await ipcRenderer.invoke('market-install', cmd)
+ if (r.ok) { setStatus('已移除'); await refreshInstalled(); render() }
+ else setStatus('失败: ' + (r.error || '移除失败'), true)
+ installing = false
+ }
 
-    async function refreshInstalled() {
-      const r = await ipcRenderer.invoke('market-installed')
-      if (r.ok) installed = r.installed || []
-    }
+ async function refreshInstalled() {
+ const r = await ipcRenderer.invoke('market-installed')
+ if (r.ok) installed = r.installed || []
+ }
 
-    async function load() {
-      setStatus('加载插件目录…')
-      const r = await ipcRenderer.invoke('market-catalog')
-      if (!r.ok) { setStatus('❌ ' + (r.error || '加载失败'), true); return }
-      all = r.plugins || []
-      await refreshInstalled()
-      render()
-      setStatus('')
-    }
+ async function load() {
+ setStatus('加载插件目录…')
+ const r = await ipcRenderer.invoke('market-catalog')
+ if (!r.ok) { setStatus('失败: ' + (r.error || '加载失败'), true); return }
+ all = r.plugins || []
+ await refreshInstalled()
+ render()
+ setStatus('')
+ }
 
-    document.getElementById('search').oninput = render
-    document.getElementById('category').onchange = render
-    document.getElementById('refreshBtn').onclick = async () => {
-      await ipcRenderer.invoke('market-clear-cache')
-      await load()
-    }
+ document.getElementById('search').oninput = render
+ document.getElementById('category').onchange = render
+ document.getElementById('refreshBtn').onclick = async () => {
+ await ipcRenderer.invoke('market-clear-cache')
+ await load()
+ }
 
-    // 安装进度日志
-    ipcRenderer.on('market-install-line', (_e, line) => {
-      logEl.textContent += line + '\n'
-      logEl.scrollTop = logEl.scrollHeight
-    })
+ // 安装进度日志
+ ipcRenderer.on('market-install-line', (_e, line) => {
+ logEl.textContent += line + '\n'
+ logEl.scrollTop = logEl.scrollHeight
+ })
 
-    load()
-  </script>
+ load()
+ </script>
 </body>
 </html>

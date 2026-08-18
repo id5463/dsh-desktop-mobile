@@ -4,537 +4,490 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #17141c; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column;
-  }
-  header { padding: 14px 18px 10px; border-bottom: 1px solid #33272e; }
-  h1 { font-size: 17px; color: #fff; }
-  .subtitle { font-size: 12px; color: #a8939b; margin-top: 3px; line-height: 1.5; }
-  .layout { flex: 1; display: flex; min-height: 0; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ background: #17141c; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column;
+ }
+ header { padding: 14px 18px 10px; border-bottom: 1px solid #33272e; }
+ h1 { font-size: 17px; color: #fff; }.subtitle { font-size: 12px; color: #a8939b; margin-top: 3px; line-height: 1.5; }.layout { flex: 1; display: flex; min-height: 0; }
 
-  /* 左: 会话列表 */
-  .sessions { width: 300px; border-right: 1px solid #33272e; overflow-y: auto; padding: 8px; }
-  .sess {
-    background: #221c24; border: 1px solid #33272e; border-radius: 9px; padding: 9px 11px;
-    margin-bottom: 7px; cursor: pointer;
-  }
-  .sess:hover { border-color: #dc3545; }
-  .sess.active { border-color: #dc3545; background: #2c1f26; }
-  .sess .t { font-size: 12.5px; font-weight: 600; color: #fff; word-break: break-all; line-height: 1.4; }
-  .sess .m { font-size: 10.5px; color: #8a7680; margin-top: 3px; word-break: break-all; }
-  .badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; }
-  .badge.blank { background: #143d1f; color: #81c784; }
-  .badge.running { background: #5c1616; color: #ffb4b4; }
-  .badge.locked { background: #3a3f5c; color: #a0a0b0; }
-  .badge.iso { background: #7B1FA2; color: #fff; }
-  .empty { padding: 24px; text-align: center; color: #8a7680; font-size: 12px; }
+ /* 左: 会话列表 */.sessions { width: 300px; border-right: 1px solid #33272e; overflow-y: auto; padding: 8px; }.sess {
+ background: #221c24; border: 1px solid #33272e; border-radius: 9px; padding: 9px 11px;
+ margin-bottom: 7px; cursor: pointer;
+ }.sess:hover { border-color: #dc3545; }.sess.active { border-color: #dc3545; background: #2c1f26; }.sess.t { font-size: 12.5px; font-weight: 600; color: #fff; word-break: break-all; line-height: 1.4; }.sess.m { font-size: 10.5px; color: #8a7680; margin-top: 3px; word-break: break-all; }.badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; }.badge.blank { background: #143d1f; color: #81c784; }.badge.running { background: #5c1616; color: #ffb4b4; }.badge.locked { background: #3a3f5c; color: #a0a0b0; }.badge.iso { background: #7B1FA2; color: #fff; }.empty { padding: 24px; text-align: center; color: #8a7680; font-size: 12px; }
 
-  /* 右: 详情 */
-  .detail { flex: 1; overflow-y: auto; padding: 14px 18px; min-width: 0; }
-  .head { margin-bottom: 10px; }
-  .head .t { font-size: 14.5px; font-weight: 700; color: #fff; word-break: break-all; }
-  .head .m { font-size: 11px; color: #8a7680; margin-top: 3px; word-break: break-all; }
-  .row { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
-  label.f { font-size: 12px; color: #b8a2ac; }
-  select, input, textarea {
-    padding: 8px 10px; border-radius: 8px; border: 1px solid #3a2b33;
-    background: #221c24; color: #fff; font-size: 12.5px; outline: none;
-  }
-  textarea { font-family: monospace; font-size: 11.5px; resize: vertical; }
-  button {
-    border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px;
-    color: #fff; cursor: pointer; background: #dc3545;
-  }
-  button.secondary { background: #3a2b33; }
-  button.small { padding: 4px 9px; font-size: 11px; border-radius: 6px; }
-  button:disabled { opacity: 0.45; cursor: default; }
-  .tabs { display: flex; gap: 4px; margin: 12px 0 10px; border-bottom: 1px solid #33272e; }
-  .tabs button {
-    background: transparent; border-radius: 8px 8px 0 0; color: #a8939b;
-    border-bottom: 2px solid transparent; padding: 8px 16px;
-  }
-  .tabs button.on { color: #fff; border-bottom-color: #dc3545; background: #221c24; }
-  .panel { display: none; }
-  .panel.on { display: block; }
+ /* 右: 详情 */.detail { flex: 1; overflow-y: auto; padding: 14px 18px; min-width: 0; }.head { margin-bottom: 10px; }.head.t { font-size: 14.5px; font-weight: 700; color: #fff; word-break: break-all; }.head.m { font-size: 11px; color: #8a7680; margin-top: 3px; word-break: break-all; }.row { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+ label.f { font-size: 12px; color: #b8a2ac; }
+ select, input, textarea {
+ padding: 8px 10px; border-radius: 8px; border: 1px solid #3a2b33;
+ background: #221c24; color: #fff; font-size: 12.5px; outline: none;
+ }
+ textarea { font-family: monospace; font-size: 11.5px; resize: vertical; }
+ button {
+ border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px;
+ color: #fff; cursor: pointer; background: #dc3545;
+ }
+ button.secondary { background: #3a2b33; }
+ button.small { padding: 4px 9px; font-size: 11px; border-radius: 6px; }
+ button:disabled { opacity: 0.45; cursor: default; }.tabs { display: flex; gap: 4px; margin: 12px 0 10px; border-bottom: 1px solid #33272e; }.tabs button {
+ background: transparent; border-radius: 8px 8px 0 0; color: #a8939b;
+ border-bottom: 2px solid transparent; padding: 8px 16px;
+ }.tabs button.on { color: #fff; border-bottom-color: #dc3545; background: #221c24; }.panel { display: none; }.panel.on { display: block; }.switch { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; color: #cbb6c0; }.switch input { accent-color: #dc3545; width: 15px; height: 15px; }.item {
+ background: #221c24; border: 1px solid #33272e; border-radius: 8px; padding: 8px 11px;
+ margin-bottom: 6px; display: flex; align-items: flex-start; gap: 9px;
+ }.item input[type=checkbox] { accent-color: #dc3545; margin-top: 2px; flex-shrink: 0; }.item.info { flex: 1; min-width: 0; }.item.n { font-size: 12.5px; font-weight: 600; color: #fff; word-break: break-all; }.item.d { font-size: 11px; color: #a8939b; margin-top: 2px; line-height: 1.45; word-break: break-all; }.item.tag { font-size: 10px; color: #8a7680; margin-left: 6px; }.item.off { opacity: 0.55; }.hint { font-size: 11px; color: #8a7680; margin: 6px 0 10px; line-height: 1.5; }.ok { font-size: 11px; color: #81c784; }.warn { font-size: 11px; color: #ef9a9a; }.status { margin-top: 10px; font-size: 12px; color: #81c784; min-height: 16px; white-space: pre-wrap; }.status.err { color: #ef9a9a; }
 
-  .switch { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12.5px; color: #cbb6c0; }
-  .switch input { accent-color: #dc3545; width: 15px; height: 15px; }
-
-  .item {
-    background: #221c24; border: 1px solid #33272e; border-radius: 8px; padding: 8px 11px;
-    margin-bottom: 6px; display: flex; align-items: flex-start; gap: 9px;
-  }
-  .item input[type=checkbox] { accent-color: #dc3545; margin-top: 2px; flex-shrink: 0; }
-  .item .info { flex: 1; min-width: 0; }
-  .item .n { font-size: 12.5px; font-weight: 600; color: #fff; word-break: break-all; }
-  .item .d { font-size: 11px; color: #a8939b; margin-top: 2px; line-height: 1.45; word-break: break-all; }
-  .item .tag { font-size: 10px; color: #8a7680; margin-left: 6px; }
-  .item .off { opacity: 0.55; }
-  .hint { font-size: 11px; color: #8a7680; margin: 6px 0 10px; line-height: 1.5; }
-  .ok { font-size: 11px; color: #81c784; }
-  .warn { font-size: 11px; color: #ef9a9a; }
-  .status { margin-top: 10px; font-size: 12px; color: #81c784; min-height: 16px; white-space: pre-wrap; }
-  .status.err { color: #ef9a9a; }
-
-  /* MCP 表单 */
-  .mcp-form { background: #221c24; border: 1px solid #33272e; border-radius: 9px; padding: 12px; margin-bottom: 10px; }
-  .mcp-form .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .mcp-form .full { grid-column: 1 / -1; }
-  .mcp-form label { display: block; font-size: 11px; color: #a8939b; margin-bottom: 3px; }
-  .mcp-form input, .mcp-form select, .mcp-form textarea { width: 100%; }
-  .mcp-form .btns { display: flex; gap: 8px; margin-top: 10px; }
-  .red-line { border-left: 3px solid #dc3545; padding-left: 10px; }
+ /* MCP 表单 */.mcp-form { background: #221c24; border: 1px solid #33272e; border-radius: 9px; padding: 12px; margin-bottom: 10px; }.mcp-form.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }.mcp-form.full { grid-column: 1 / -1; }.mcp-form label { display: block; font-size: 11px; color: #a8939b; margin-bottom: 3px; }.mcp-form input,.mcp-form select,.mcp-form textarea { width: 100%; }.mcp-form.btns { display: flex; gap: 8px; margin-top: 10px; }.red-line { border-left: 3px solid #dc3545; padding-left: 10px; }
 </style>
 </head>
 <body>
-  <header>
-    <h1>🔒 对话隔离 / Conversation Isolation</h1>
-    <p class="subtitle">按会话管理外部依赖：技能 · MCP 服务器 · 插件。每个会话由 DSH 的一份 preset 组合其能力，改动在空白会话立即生效，已有内容的会话会被 DSH 锁定（配置保留，可用于新建会话）。</p>
-  </header>
+ <header>
+ <h1>对话隔离 / Conversation Isolation</h1>
+ <p class="subtitle">按会话管理外部依赖：技能 · MCP 服务器 · 插件。每个会话由 DSH 的一份 preset 组合其能力，改动在空白会话立即生效，已有内容的会话会被 DSH 锁定（配置保留，可用于新建会话）。</p>
+ </header>
 
-  <div class="layout">
-    <div class="sessions" id="sessions"><div class="empty">加载中…</div></div>
+ <div class="layout">
+ <div class="sessions" id="sessions"><div class="empty">加载中…</div></div>
 
-    <div class="detail" id="detail">
-      <div class="empty" id="noSel">← 从左侧选择一个会话</div>
-      <div id="body" style="display:none">
-        <div class="head">
-          <div class="t" id="sTitle"></div>
-          <div class="m" id="sMeta"></div>
-        </div>
+ <div class="detail" id="detail">
+ <div class="empty" id="noSel">← 从左侧选择一个会话</div>
+ <div id="body" style="display:none">
+ <div class="head">
+ <div class="t" id="sTitle"></div>
+ <div class="m" id="sMeta"></div>
+ </div>
 
-        <div class="row">
-          <label class="f">基础预设</label>
-          <select id="basePreset"></select>
-          <button id="applyBtn">✅ 应用到该会话</button>
-          <button id="newBtn" class="secondary">➕ 以该配置新建会话</button>
-        </div>
-        <div class="hint" id="lockHint"></div>
+ <div class="row">
+ <label class="f">基础预设</label>
+ <select id="basePreset"></select>
+ <button id="applyBtn">应用到该会话</button>
+ <button id="newBtn" class="secondary">以该配置新建会话</button>
+ </div>
+ <div class="hint" id="lockHint"></div>
 
-        <div class="tabs">
-          <button data-tab="skill" class="on">🧠 技能</button>
-          <button data-tab="mcp">🔌 MCP 服务器</button>
-          <button data-tab="plugins">🧩 插件</button>
-        </div>
+ <div class="tabs">
+ <button data-tab="skill" class="on">技能</button>
+ <button data-tab="mcp">MCP 服务器</button>
+ <button data-tab="plugins">插件</button>
+ </div>
 
-        <!-- 技能 -->
-        <div class="panel on" id="tabSkill">
-          <div class="switch"><input type="checkbox" id="skillIsolation"><span>启用技能隔离：该会话<b>只</b>看到下方勾选的技能（其余技能/内置技能全部不可见）</span></div>
-          <div id="skillList"></div>
-          <div class="hint" id="skillHint"></div>
-        </div>
+ <!-- 技能 -->
+ <div class="panel on" id="tabSkill">
+ <div class="switch"><input type="checkbox" id="skillIsolation"><span>启用技能隔离：该会话<b>只</b>看到下方勾选的技能（其余技能/内置技能全部不可见）</span></div>
+ <div id="skillList"></div>
+ <div class="hint" id="skillHint"></div>
+ </div>
 
-        <!-- MCP -->
-        <div class="panel" id="tabMcp">
-          <div class="mcp-form">
-            <div class="grid">
-              <div><label>服务器名 (serverName, 工具名前缀)</label><input id="mcpName" placeholder="my-server"></div>
-              <div><label>传输方式</label><select id="mcpTransport"><option value="stdio">stdio (本地命令)</option><option value="streamable-http">streamable-http (远程 URL)</option></select></div>
-              <div class="full" id="stdioBlock">
-                <div class="grid">
-                  <div><label>启动命令 (command)</label><input id="mcpCommand" placeholder="npx"></div>
-                  <div><label>参数 (args, 每行一个)</label><textarea id="mcpArgs" rows="2" placeholder="@modelcontextprotocol/server-everything"></textarea></div>
-                  <div><label>环境变量 (key=value, 每行一个, 可选)</label><textarea id="mcpEnv" rows="2" placeholder="API_KEY=xxx"></textarea></div>
-                  <div><label>工作目录 (cwd, 可选)</label><input id="mcpCwd" placeholder=""></div>
-                </div>
-              </div>
-              <div class="full" id="httpBlock" style="display:none">
-                <div class="grid">
-                  <div><label>MCP 端点 URL</label><input id="mcpUrl" placeholder="https://example.com/mcp"></div>
-                  <div><label>请求头 (key: value, 每行一个, 可选)</label><textarea id="mcpHeaders" rows="2" placeholder="Authorization: Bearer xxx"></textarea></div>
-                </div>
-              </div>
-              <div><label>单次工具调用超时 (ms, 可选)</label><input id="mcpTimeout" placeholder="60000"></div>
-            </div>
-            <div class="btns">
-              <button id="mcpSave" class="small">💾 保存服务器</button>
-              <button id="mcpCancel" class="small secondary" style="display:none">取消编辑</button>
-            </div>
-          </div>
-          <div id="mcpList"></div>
-          <div class="hint">勾选 = 该会话挂载此服务器。同一服务器可复用到多个会话（工具名带会话短号，如 mcp__my-server-ab12cd__tool）。</div>
-        </div>
+ <!-- MCP -->
+ <div class="panel" id="tabMcp">
+ <div class="mcp-form">
+ <div class="grid">
+ <div><label>服务器名 (serverName, 工具名前缀)</label><input id="mcpName" placeholder="my-server"></div>
+ <div><label>传输方式</label><select id="mcpTransport"><option value="stdio">stdio (本地命令)</option><option value="streamable-http">streamable-http (远程 URL)</option></select></div>
+ <div class="full" id="stdioBlock">
+ <div class="grid">
+ <div><label>启动命令 (command)</label><input id="mcpCommand" placeholder="npx"></div>
+ <div><label>参数 (args, 每行一个)</label><textarea id="mcpArgs" rows="2" placeholder="@modelcontextprotocol/server-everything"></textarea></div>
+ <div><label>环境变量 (key=value, 每行一个, 可选)</label><textarea id="mcpEnv" rows="2" placeholder="API_KEY=xxx"></textarea></div>
+ <div><label>工作目录 (cwd, 可选)</label><input id="mcpCwd" placeholder=""></div>
+ </div>
+ </div>
+ <div class="full" id="httpBlock" style="display:none">
+ <div class="grid">
+ <div><label>MCP 端点 URL</label><input id="mcpUrl" placeholder="https://example.com/mcp"></div>
+ <div><label>请求头 (key: value, 每行一个, 可选)</label><textarea id="mcpHeaders" rows="2" placeholder="Authorization: Bearer xxx"></textarea></div>
+ </div>
+ </div>
+ <div><label>单次工具调用超时 (ms, 可选)</label><input id="mcpTimeout" placeholder="60000"></div>
+ </div>
+ <div class="btns">
+ <button id="mcpSave" class="small">保存服务器</button>
+ <button id="mcpCancel" class="small secondary" style="display:none">取消编辑</button>
+ </div>
+ </div>
+ <div id="mcpList"></div>
+ <div class="hint">勾选 = 该会话挂载此服务器。同一服务器可复用到多个会话（工具名带会话短号，如 mcp__my-server-ab12cd__tool）。</div>
+ </div>
 
-        <!-- 插件 -->
-        <div class="panel" id="tabPlugins">
-          <div id="pluginList"></div>
-          <div class="hint" id="pluginHint"></div>
-        </div>
+ <!-- 插件 -->
+ <div class="panel" id="tabPlugins">
+ <div id="pluginList"></div>
+ <div class="hint" id="pluginHint"></div>
+ </div>
 
-        <div class="status" id="status"></div>
-      </div>
-    </div>
-  </div>
+ <div class="status" id="status"></div>
+ </div>
+ </div>
+ </div>
 
-  <script>
-    const { ipcRenderer } = require('electron')
-    const $ = (id) => document.getElementById(id)
+ <script>
+ const { ipcRenderer } = require('electron')
+ const $ = (id) => document.getElementById(id)
 
-    let sessions = [], presets = [], state = {}
-    let pluginCatalog = [], mcpServers = []
-    let current = null                       // 当前选中的会话对象
-    let sel = null                           // 当前会话的隔离配置 {base, skillIsolation, skills, mcp, plugins}
-    let skills = []                          // 当前会话的 skill.list
-    let editingMcpId = null
+ let sessions = [], presets = [], state = {}
+ let pluginCatalog = [], mcpServers = []
+ let current = null // 当前选中的会话对象
+ let sel = null // 当前会话的隔离配置 {base, skillIsolation, skills, mcp, plugins}
+ let skills = [] // 当前会话的 skill.list
+ let editingMcpId = null
 
-    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
-    function setStatus(t, err) { const el = $('status'); el.textContent = t; el.className = 'status' + (err ? ' err' : '') }
+ function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+ function setStatus(t, err) { const el = $('status'); el.textContent = t; el.className = 'status' + (err ? ' err' : '') }
 
-    function shortTitle(s) {
-      return (s && s.title) ? s.title : '（未命名会话）'
-    }
+ function shortTitle(s) {
+ return (s && s.title) ? s.title : '（未命名会话）'
+ }
 
-    // ---- 会话列表 ----
-    function renderSessions() {
-      const el = $('sessions')
-      if (!sessions.length) { el.innerHTML = '<div class="empty">没有会话。先在右侧 DSH 界面新建一个对话。</div>'; return }
-      el.innerHTML = sessions.map((s) => {
-        const badge = s.blank ? '<span class="badge blank">空白</span>'
-          : s.running ? '<span class="badge running">运行中</span>'
-          : '<span class="badge locked">已有内容</span>'
-        const iso = (state[s.sessionId] && (state[s.sessionId].skillIsolation || (state[s.sessionId].mcp && state[s.sessionId].mcp.length) || (state[s.sessionId].plugins && state[s.sessionId].plugins.length)))
-          ? '<span class="badge iso">隔离</span>' : ''
-        const p = s.preset && s.preset.startsWith('red-iso-') ? '<span class="badge iso">' + esc(s.preset) + '</span>' : ''
-        return '<div class="sess' + (current && current.sessionId === s.sessionId ? ' active' : '') + '" data-id="' + esc(s.sessionId) + '">'
-          + '<div class="t">' + esc(shortTitle(s)) + '</div>'
-          + '<div class="m">' + badge + iso + p + esc(s.sessionId) + '</div>'
-          + '</div>'
-      }).join('')
-      el.querySelectorAll('.sess').forEach((d) => d.onclick = () => selectSession(d.dataset.id))
-    }
+ // ---- 会话列表 ----
+ function renderSessions() {
+ const el = $('sessions')
+ if (!sessions.length) { el.innerHTML = '<div class="empty">没有会话。先在右侧 DSH 界面新建一个对话。</div>'; return }
+ el.innerHTML = sessions.map((s) => {
+ const badge = s.blank ? '<span class="badge blank">空白</span>'
+ : s.running ? '<span class="badge running">运行中</span>'
+ : '<span class="badge locked">已有内容</span>'
+ const iso = (state[s.sessionId] && (state[s.sessionId].skillIsolation || (state[s.sessionId].mcp && state[s.sessionId].mcp.length) || (state[s.sessionId].plugins && state[s.sessionId].plugins.length)))
+ ? '<span class="badge iso">隔离</span>' : ''
+ const p = s.preset && s.preset.startsWith('red-iso-') ? '<span class="badge iso">' + esc(s.preset) + '</span>' : ''
+ return '<div class="sess' + (current && current.sessionId === s.sessionId ? ' active' : '') + '" data-id="' + esc(s.sessionId) + '">'
+ + '<div class="t">' + esc(shortTitle(s)) + '</div>'
+ + '<div class="m">' + badge + iso + p + esc(s.sessionId) + '</div>'
+ + '</div>'
+ }).join('')
+ el.querySelectorAll('.sess').forEach((d) => d.onclick = () => selectSession(d.dataset.id))
+ }
 
-    function applyStateToSel() {
-      const st = state[current.sessionId]
-      sel = {
-        base: (st && st.base) || current.preset || (presets.find((p) => p.isDefault) || {}).id || (presets[0] && presets[0].id) || 'standard',
-        skillIsolation: !!(st && st.skillIsolation),
-        skills: (st && st.skills) || [],
-        mcp: (st && st.mcp) || [],
-        plugins: (st && st.plugins) || [],
-      }
-    }
+ function applyStateToSel() {
+ const st = state[current.sessionId]
+ sel = {
+ base: (st && st.base) || current.preset || (presets.find((p) => p.isDefault) || {}).id || (presets[0] && presets[0].id) || 'standard',
+ skillIsolation: !!(st && st.skillIsolation),
+ skills: (st && st.skills) || [],
+ mcp: (st && st.mcp) || [],
+ plugins: (st && st.plugins) || [],
+ }
+ }
 
-    async function selectSession(id) {
-      current = sessions.find((s) => s.sessionId === id) || null
-      if (!current) return
-      applyStateToSel()
-      $('noSel').style.display = 'none'
-      $('body').style.display = 'block'
-      $('sTitle').textContent = shortTitle(current)
-      $('sMeta').innerHTML = esc(current.sessionId)
-        + (current.cwd ? ' · cwd: ' + esc(current.cwd) : '')
-        + ' · 当前预设: ' + esc(current.preset || '-')
-      renderBasePreset()
-      renderLockHint()
-      renderTabs()
-      renderSessions()
-      setStatus('')
-      const r = await ipcRenderer.invoke('isolation-session-skills', current.sessionId)
-      skills = (r && r.ok) ? (r.skills || []) : []
-      renderSkills()
-    }
+ async function selectSession(id) {
+ current = sessions.find((s) => s.sessionId === id) || null
+ if (!current) return
+ applyStateToSel()
+ $('noSel').style.display = 'none'
+ $('body').style.display = 'block'
+ $('sTitle').textContent = shortTitle(current)
+ $('sMeta').innerHTML = esc(current.sessionId)
+ + (current.cwd ? ' · cwd: ' + esc(current.cwd) : '')
+ + ' · 当前预设: ' + esc(current.preset || '-')
+ renderBasePreset()
+ renderLockHint()
+ renderTabs()
+ renderSessions()
+ setStatus('')
+ const r = await ipcRenderer.invoke('isolation-session-skills', current.sessionId)
+ skills = (r && r.ok) ? (r.skills || []) : []
+ renderSkills()
+ }
 
-    function renderBasePreset() {
-      const el = $('basePreset')
-      el.innerHTML = presets.map((p) =>
-        '<option value="' + esc(p.id) + '"' + (p.id === sel.base ? ' selected' : '') + '>'
-        + esc(p.name) + (p.isDefault ? ' (默认)' : '') + ' · ' + esc(p.trust) + '</option>').join('')
-      el.onchange = () => { sel.base = el.value; setStatus('') }
-    }
+ function renderBasePreset() {
+ const el = $('basePreset')
+ el.innerHTML = presets.map((p) =>
+ '<option value="' + esc(p.id) + '"' + (p.id === sel.base ? ' selected' : '') + '>'
+ + esc(p.name) + (p.isDefault ? ' (默认)' : '') + ' · ' + esc(p.trust) + '</option>').join('')
+ el.onchange = () => { sel.base = el.value; setStatus('') }
+ }
 
-    function renderLockHint() {
-      $('lockHint').textContent = current.blank
-        ? '✔ 空白会话：应用隔离立即生效（DSH 允许空白期切换预设）'
-        : '⚠ 该会话已有内容，DSH 禁止中途切换预设（agent-preset-locked）。修改会保存，新建会话时生效；也可用「以该配置新建会话」。'
-    }
+ function renderLockHint() {
+ $('lockHint').textContent = current.blank
+ ? '空白会话：应用隔离立即生效（DSH 允许空白期切换预设）'
+ : '警告: 该会话已有内容，DSH 禁止中途切换预设（agent-preset-locked）。修改会保存，新建会话时生效；也可用「以该配置新建会话」。'
+ }
 
-    // ---- 页签 ----
-    function renderTabs() {
-      document.querySelectorAll('.tabs button').forEach((b) => {
-        b.onclick = () => {
-          document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b))
-          document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'tab' + b.dataset.tab[0].toUpperCase() + b.dataset.tab.slice(1)))
-        }
-      })
-    }
+ // ---- 页签 ----
+ function renderTabs() {
+ document.querySelectorAll('.tabs button').forEach((b) => {
+ b.onclick = () => {
+ document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b))
+ document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'tab' + b.dataset.tab[0].toUpperCase() + b.dataset.tab.slice(1)))
+ }
+ })
+ }
 
-    // ---- 技能 ----
-    function renderSkills() {
-      const sw = $('skillIsolation')
-      sw.checked = !!(sel && sel.skillIsolation)
-      sw.onchange = () => { sel.skillIsolation = sw.checked; if (!sw.checked) sel.skills = []; renderSkills(); setStatus('') }
-      const el = $('skillList')
-      if (!skills.length) { el.innerHTML = '<div class="hint">该会话当前没有可用的技能（skill.list 为空）。</div>'; $('skillHint').textContent = ''; return }
-      const enabled = new Set((sel && sel.skills) || [])
-      el.innerHTML = skills.map((s) => {
-        const on = enabled.has(s.name)
-        return '<div class="item' + (sel.skillIsolation && !on ? ' off' : '') + '">'
-          + '<input type="checkbox" data-skill="' + esc(s.name) + '"' + (on ? ' checked' : '') + (sel.skillIsolation ? '' : ' disabled') + '>'
-          + '<div class="info"><div class="n">' + esc(s.name) + (s.modelInvocable ? '' : '<span class="tag">仅用户可调</span>') + '</div>'
-          + '<div class="d">' + esc(s.description) + '</div></div></div>'
-      }).join('')
-      el.querySelectorAll('input[data-skill]').forEach((c) => {
-        c.onchange = () => {
-          const set = new Set(sel.skills)
-          if (c.checked) set.add(c.dataset.skill); else set.delete(c.dataset.skill)
-          sel.skills = [...set]
-          renderSkills()
-          setStatus('')
-        }
-      })
-      $('skillHint').textContent = sel.skillIsolation
-        ? '已启用：该会话只会看到勾选的 ' + sel.skills.length + ' 个技能（Red 把它们 junction 进专属技能目录）。取消勾选后保存即可生效。'
-        : '未启用：该会话使用基础预设的完整技能目录。勾选上方开关并按需选择技能后，点「应用到该会话」。'
-    }
+ // ---- 技能 ----
+ function renderSkills() {
+ const sw = $('skillIsolation')
+ sw.checked = !!(sel && sel.skillIsolation)
+ sw.onchange = () => { sel.skillIsolation = sw.checked; if (!sw.checked) sel.skills = []; renderSkills(); setStatus('') }
+ const el = $('skillList')
+ if (!skills.length) { el.innerHTML = '<div class="hint">该会话当前没有可用的技能（skill.list 为空）。</div>'; $('skillHint').textContent = ''; return }
+ const enabled = new Set((sel && sel.skills) || [])
+ el.innerHTML = skills.map((s) => {
+ const on = enabled.has(s.name)
+ return '<div class="item' + (sel.skillIsolation && !on ? ' off' : '') + '">'
+ + '<input type="checkbox" data-skill="' + esc(s.name) + '"' + (on ? ' checked' : '') + (sel.skillIsolation ? '' : ' disabled') + '>'
+ + '<div class="info"><div class="n">' + esc(s.name) + (s.modelInvocable ? '' : '<span class="tag">仅用户可调</span>') + '</div>'
+ + '<div class="d">' + esc(s.description) + '</div></div></div>'
+ }).join('')
+ el.querySelectorAll('input[data-skill]').forEach((c) => {
+ c.onchange = () => {
+ const set = new Set(sel.skills)
+ if (c.checked) set.add(c.dataset.skill); else set.delete(c.dataset.skill)
+ sel.skills = [...set]
+ renderSkills()
+ setStatus('')
+ }
+ })
+ $('skillHint').textContent = sel.skillIsolation
+ ? '已启用：该会话只会看到勾选的 ' + sel.skills.length + ' 个技能（Red 把它们 junction 进专属技能目录）。取消勾选后保存即可生效。'
+ : '未启用：该会话使用基础预设的完整技能目录。勾选上方开关并按需选择技能后，点「应用到该会话」。'
+ }
 
-    // ---- MCP ----
-    function parseLines(text) {
-      return String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-    }
-    function parseKv(text) {
-      const out = {}
-      for (const line of parseLines(text)) {
-        const i = line.indexOf('=')
-        if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim()
-      }
-      return out
-    }
-    function parseHdrs(text) {
-      const out = {}
-      for (const line of parseLines(text)) {
-        const i = line.indexOf(':')
-        if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim()
-      }
-      return out
-    }
+ // ---- MCP ----
+ function parseLines(text) {
+ return String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+ }
+ function parseKv(text) {
+ const out = {}
+ for (const line of parseLines(text)) {
+ const i = line.indexOf('=')
+ if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim()
+ }
+ return out
+ }
+ function parseHdrs(text) {
+ const out = {}
+ for (const line of parseLines(text)) {
+ const i = line.indexOf(':')
+ if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim()
+ }
+ return out
+ }
 
-    function renderMcp() {
-      const enabled = new Set((sel && sel.mcp) || [])
-      const el = $('mcpList')
-      if (!mcpServers.length) { el.innerHTML = '<div class="hint">还没有 MCP 服务器。在上方表单添加一个（例如 npx 启动的本地服务器，或远程 URL）。</div>' }
-      else {
-        el.innerHTML = mcpServers.map((s) => {
-          const on = enabled.has(s.id)
-          const detail = s.transport === 'streamable-http' ? esc(s.url || '')
-            : esc((s.command || '') + ' ' + (s.args || []).join(' '))
-          return '<div class="item' + (!on ? ' off' : '') + '">'
-            + '<input type="checkbox" data-mcp="' + esc(s.id) + '"' + (on ? ' checked' : '') + '>'
-            + '<div class="info"><div class="n">' + esc(s.serverName || s.id) + '<span class="tag">' + esc(s.transport || 'stdio') + '</span></div>'
-            + '<div class="d">' + detail + '</div></div>'
-            + '<div style="display:flex;gap:5px;flex-shrink:0">'
-            + '<button class="small secondary mcp-edit" data-id="' + esc(s.id) + '">编辑</button>'
-            + '<button class="small mcp-del" data-id="' + esc(s.id) + '">删除</button></div></div>'
-        }).join('')
-        el.querySelectorAll('input[data-mcp]').forEach((c) => {
-          c.onchange = () => {
-            const set = new Set(sel.mcp)
-            if (c.checked) set.add(c.dataset.mcp); else set.delete(c.dataset.mcp)
-            sel.mcp = [...set]
-            renderMcp()
-            setStatus('')
-          }
-        })
-        el.querySelectorAll('.mcp-edit').forEach((b) => b.onclick = () => editMcp(b.dataset.id))
-        el.querySelectorAll('.mcp-del').forEach((b) => b.onclick = () => {
-          if (!confirm('删除 MCP 服务器「' + (mcpServers.find((s) => s.id === b.dataset.id) || {}).serverName + '」？')) return
-          mcpServers = mcpServers.filter((s) => s.id !== b.dataset.id)
-          ipcRenderer.invoke('isolation-mcp-save', mcpServers)
-          sel.mcp = sel.mcp.filter((x) => x !== b.dataset.id)
-          renderMcp()
-        })
-      }
-      // 传输方式切换
-      $('mcpTransport').onchange = () => {
-        $('stdioBlock').style.display = $('mcpTransport').value === 'stdio' ? '' : 'none'
-        $('httpBlock').style.display = $('mcpTransport').value === 'streamable-http' ? '' : 'none'
-      }
-      $('mcpSave').onclick = saveMcp
-      $('mcpCancel').onclick = () => { editingMcpId = null; resetMcpForm(); $('mcpCancel').style.display = 'none' }
-    }
+ function renderMcp() {
+ const enabled = new Set((sel && sel.mcp) || [])
+ const el = $('mcpList')
+ if (!mcpServers.length) { el.innerHTML = '<div class="hint">还没有 MCP 服务器。在上方表单添加一个（例如 npx 启动的本地服务器，或远程 URL）。</div>' }
+ else {
+ el.innerHTML = mcpServers.map((s) => {
+ const on = enabled.has(s.id)
+ const detail = s.transport === 'streamable-http' ? esc(s.url || '')
+ : esc((s.command || '') + ' ' + (s.args || []).join(' '))
+ return '<div class="item' + (!on ? ' off' : '') + '">'
+ + '<input type="checkbox" data-mcp="' + esc(s.id) + '"' + (on ? ' checked' : '') + '>'
+ + '<div class="info"><div class="n">' + esc(s.serverName || s.id) + '<span class="tag">' + esc(s.transport || 'stdio') + '</span></div>'
+ + '<div class="d">' + detail + '</div></div>'
+ + '<div style="display:flex;gap:5px;flex-shrink:0">'
+ + '<button class="small secondary mcp-edit" data-id="' + esc(s.id) + '">编辑</button>'
+ + '<button class="small mcp-del" data-id="' + esc(s.id) + '">删除</button></div></div>'
+ }).join('')
+ el.querySelectorAll('input[data-mcp]').forEach((c) => {
+ c.onchange = () => {
+ const set = new Set(sel.mcp)
+ if (c.checked) set.add(c.dataset.mcp); else set.delete(c.dataset.mcp)
+ sel.mcp = [...set]
+ renderMcp()
+ setStatus('')
+ }
+ })
+ el.querySelectorAll('.mcp-edit').forEach((b) => b.onclick = () => editMcp(b.dataset.id))
+ el.querySelectorAll('.mcp-del').forEach((b) => b.onclick = () => {
+ if (!confirm('删除 MCP 服务器「' + (mcpServers.find((s) => s.id === b.dataset.id) || {}).serverName + '」？')) return
+ mcpServers = mcpServers.filter((s) => s.id !== b.dataset.id)
+ ipcRenderer.invoke('isolation-mcp-save', mcpServers)
+ sel.mcp = sel.mcp.filter((x) => x !== b.dataset.id)
+ renderMcp()
+ })
+ }
+ // 传输方式切换
+ $('mcpTransport').onchange = () => {
+ $('stdioBlock').style.display = $('mcpTransport').value === 'stdio' ? '' : 'none'
+ $('httpBlock').style.display = $('mcpTransport').value === 'streamable-http' ? '' : 'none'
+ }
+ $('mcpSave').onclick = saveMcp
+ $('mcpCancel').onclick = () => { editingMcpId = null; resetMcpForm(); $('mcpCancel').style.display = 'none' }
+ }
 
-    function resetMcpForm() {
-      $('mcpName').value = ''; $('mcpCommand').value = ''; $('mcpArgs').value = ''; $('mcpEnv').value = ''
-      $('mcpCwd').value = ''; $('mcpUrl').value = ''; $('mcpHeaders').value = ''; $('mcpTimeout').value = '60000'
-    }
+ function resetMcpForm() {
+ $('mcpName').value = ''; $('mcpCommand').value = ''; $('mcpArgs').value = ''; $('mcpEnv').value = ''
+ $('mcpCwd').value = ''; $('mcpUrl').value = ''; $('mcpHeaders').value = ''; $('mcpTimeout').value = '60000'
+ }
 
-    function editMcp(id) {
-      const s = mcpServers.find((x) => x.id === id)
-      if (!s) return
-      editingMcpId = id
-      $('mcpName').value = s.serverName || s.id
-      $('mcpTransport').value = s.transport || 'stdio'
-      $('mcpCommand').value = s.command || ''
-      $('mcpArgs').value = (s.args || []).join('\n')
-      $('mcpEnv').value = Object.entries(s.env || {}).map(([k, v]) => k + '=' + v).join('\n')
-      $('mcpCwd').value = s.cwd || ''
-      $('mcpUrl').value = s.url || ''
-      $('mcpHeaders').value = Object.entries(s.headers || {}).map(([k, v]) => k + ': ' + v).join('\n')
-      $('mcpTimeout').value = s.timeoutMs || '60000'
-      $('mcpTransport').onchange()
-      $('mcpCancel').style.display = ''
-      $('mcpSave').textContent = '💾 更新服务器'
-    }
+ function editMcp(id) {
+ const s = mcpServers.find((x) => x.id === id)
+ if (!s) return
+ editingMcpId = id
+ $('mcpName').value = s.serverName || s.id
+ $('mcpTransport').value = s.transport || 'stdio'
+ $('mcpCommand').value = s.command || ''
+ $('mcpArgs').value = (s.args || []).join('\n')
+ $('mcpEnv').value = Object.entries(s.env || {}).map(([k, v]) => k + '=' + v).join('\n')
+ $('mcpCwd').value = s.cwd || ''
+ $('mcpUrl').value = s.url || ''
+ $('mcpHeaders').value = Object.entries(s.headers || {}).map(([k, v]) => k + ': ' + v).join('\n')
+ $('mcpTimeout').value = s.timeoutMs || '60000'
+ $('mcpTransport').onchange()
+ $('mcpCancel').style.display = ''
+ $('mcpSave').textContent = '更新服务器'
+ }
 
-    function saveMcp() {
-      const serverName = $('mcpName').value.trim()
-      if (!serverName) { setStatus('请填写服务器名', true); return }
-      const transport = $('mcpTransport').value
-      const id = editingMcpId || serverName.toLowerCase().replace(/[^a-z0-9-]/g, '-')
-      const entry = {
-        id,
-        serverName,
-        transport,
-        timeoutMs: parseInt($('mcpTimeout').value, 10) || undefined,
-      }
-      if (transport === 'streamable-http') {
-        entry.url = $('mcpUrl').value.trim()
-        entry.headers = parseHdrs($('mcpHeaders').value)
-        if (!entry.url) { setStatus('请填写 MCP 端点 URL', true); return }
-      } else {
-        entry.command = $('mcpCommand').value.trim()
-        entry.args = parseLines($('mcpArgs').value)
-        entry.env = parseKv($('mcpEnv').value)
-        entry.cwd = $('mcpCwd').value.trim() || undefined
-        if (!entry.command) { setStatus('请填写启动命令 (command)', true); return }
-      }
-      const idx = mcpServers.findIndex((s) => s.id === id)
-      if (idx >= 0) mcpServers[idx] = entry; else mcpServers.push(entry)
-      ipcRenderer.invoke('isolation-mcp-save', mcpServers)
-      editingMcpId = null
-      resetMcpForm()
-      $('mcpCancel').style.display = 'none'
-      $('mcpSave').textContent = '💾 保存服务器'
-      renderMcp()
-      setStatus('')
-    }
+ function saveMcp() {
+ const serverName = $('mcpName').value.trim()
+ if (!serverName) { setStatus('请填写服务器名', true); return }
+ const transport = $('mcpTransport').value
+ const id = editingMcpId || serverName.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+ const entry = {
+ id,
+ serverName,
+ transport,
+ timeoutMs: parseInt($('mcpTimeout').value, 10) || undefined,
+ }
+ if (transport === 'streamable-http') {
+ entry.url = $('mcpUrl').value.trim()
+ entry.headers = parseHdrs($('mcpHeaders').value)
+ if (!entry.url) { setStatus('请填写 MCP 端点 URL', true); return }
+ } else {
+ entry.command = $('mcpCommand').value.trim()
+ entry.args = parseLines($('mcpArgs').value)
+ entry.env = parseKv($('mcpEnv').value)
+ entry.cwd = $('mcpCwd').value.trim() || undefined
+ if (!entry.command) { setStatus('请填写启动命令 (command)', true); return }
+ }
+ const idx = mcpServers.findIndex((s) => s.id === id)
+ if (idx >= 0) mcpServers[idx] = entry; else mcpServers.push(entry)
+ ipcRenderer.invoke('isolation-mcp-save', mcpServers)
+ editingMcpId = null
+ resetMcpForm()
+ $('mcpCancel').style.display = 'none'
+ $('mcpSave').textContent = '保存服务器'
+ renderMcp()
+ setStatus('')
+ }
 
-    // ---- 插件 ----
-    function renderPlugins() {
-      const enabled = new Set((sel && sel.plugins) || [])
-      const el = $('pluginList')
-      if (!pluginCatalog.length) { el.innerHTML = '<div class="hint">加载中…</div>'; return }
-      el.innerHTML = pluginCatalog.map((p) => {
-        const on = enabled.has(p.name)
-        const canIso = !p.global
-        return '<div class="item' + (canIso && !on ? ' off' : '') + '">'
-          + '<input type="checkbox" data-plugin="' + esc(p.name) + '"' + (on ? ' checked' : '') + (canIso ? '' : ' disabled') + '>'
-          + '<div class="info"><div class="n">' + esc(p.name)
-          + (p.global ? '<span class="tag">全局挂载 · 所有会话可见</span>' : (p.installed ? '<span class="tag">已安装</span>' : '<span class="tag">未安装</span>'))
-          + '</div>'
-          + '<div class="d">' + (p.entry ? '入口: ' + esc(p.entry) : (p.global ? '已作为 bundle 全局挂载，无法按会话隔离' : '尚未安装到本机')) + '</div></div>'
-          + (p.installed && !p.global ? '' : (!p.global
-            ? '<button class="small secondary dep-install" data-pkg="' + esc(p.name) + '">按会话安装</button>'
-            : '<span class="tag">全局</span>'))
-          + '</div>'
-      }).join('')
-      el.querySelectorAll('input[data-plugin]').forEach((c) => {
-        c.onchange = () => {
-          const set = new Set(sel.plugins)
-          if (c.checked) set.add(c.dataset.plugin); else set.delete(c.dataset.plugin)
-          sel.plugins = [...set]
-          renderPlugins()
-          setStatus('')
-        }
-      })
-      el.querySelectorAll('.dep-install').forEach((b) => {
-        b.onclick = async () => {
-          const pkg = b.dataset.pkg
-          b.disabled = true; b.textContent = '安装中…'
-          const r = await ipcRenderer.invoke('isolation-install-dep', pkg)
-          if (r.ok) { b.textContent = '✓ 已安装'; setStatus('✅ 已安装 ' + pkg + '（未全局挂载）。勾选它并应用后，该会话即可使用。') }
-          else { b.textContent = '重试'; setStatus('❌ 安装失败: ' + (r.error || r.output || ''), true) }
-          const rc = await ipcRenderer.invoke('isolation-plugin-catalog')
-          if (rc.ok) pluginCatalog = rc.plugins || []
-          renderPlugins()
-        }
-      })
-      $('pluginHint').textContent = '勾选 = 该会话挂载此插件（以 preset 行形式，不影响其他会话）。全局挂载的插件（bundle）对所有会话可见，不能按会话隔离。'
-    }
+ // ---- 插件 ----
+ function renderPlugins() {
+ const enabled = new Set((sel && sel.plugins) || [])
+ const el = $('pluginList')
+ if (!pluginCatalog.length) { el.innerHTML = '<div class="hint">加载中…</div>'; return }
+ el.innerHTML = pluginCatalog.map((p) => {
+ const on = enabled.has(p.name)
+ const canIso = !p.global
+ return '<div class="item' + (canIso && !on ? ' off' : '') + '">'
+ + '<input type="checkbox" data-plugin="' + esc(p.name) + '"' + (on ? ' checked' : '') + (canIso ? '' : ' disabled') + '>'
+ + '<div class="info"><div class="n">' + esc(p.name)
+ + (p.global ? '<span class="tag">全局挂载 · 所有会话可见</span>' : (p.installed ? '<span class="tag">已安装</span>' : '<span class="tag">未安装</span>'))
+ + '</div>'
+ + '<div class="d">' + (p.entry ? '入口: ' + esc(p.entry) : (p.global ? '已作为 bundle 全局挂载，无法按会话隔离' : '尚未安装到本机')) + '</div></div>'
+ + (p.installed && !p.global ? '' : (!p.global
+ ? '<button class="small secondary dep-install" data-pkg="' + esc(p.name) + '">按会话安装</button>'
+ : '<span class="tag">全局</span>'))
+ + '</div>'
+ }).join('')
+ el.querySelectorAll('input[data-plugin]').forEach((c) => {
+ c.onchange = () => {
+ const set = new Set(sel.plugins)
+ if (c.checked) set.add(c.dataset.plugin); else set.delete(c.dataset.plugin)
+ sel.plugins = [...set]
+ renderPlugins()
+ setStatus('')
+ }
+ })
+ el.querySelectorAll('.dep-install').forEach((b) => {
+ b.onclick = async () => {
+ const pkg = b.dataset.pkg
+ b.disabled = true; b.textContent = '安装中…'
+ const r = await ipcRenderer.invoke('isolation-install-dep', pkg)
+ if (r.ok) { b.textContent = '已安装'; setStatus('已安装 ' + pkg + '（未全局挂载）。勾选它并应用后，该会话即可使用。') }
+ else { b.textContent = '重试'; setStatus('安装失败: ' + (r.error || r.output || ''), true) }
+ const rc = await ipcRenderer.invoke('isolation-plugin-catalog')
+ if (rc.ok) pluginCatalog = rc.plugins || []
+ renderPlugins()
+ }
+ })
+ $('pluginHint').textContent = '勾选 = 该会话挂载此插件（以 preset 行形式，不影响其他会话）。全局挂载的插件（bundle）对所有会话可见，不能按会话隔离。'
+ }
 
-    // ---- 应用 ----
-    function collectReq() {
-      return {
-        sessionId: current.sessionId,
-        title: shortTitle(current),
-        base: sel.base,
-        cwd: current.cwd || undefined,
-        skillIsolation: !!sel.skillIsolation,
-        skills: sel.skills,
-        mcp: sel.mcp,
-        plugins: sel.plugins,
-      }
-    }
+ // ---- 应用 ----
+ function collectReq() {
+ return {
+ sessionId: current.sessionId,
+ title: shortTitle(current),
+ base: sel.base,
+ cwd: current.cwd || undefined,
+ skillIsolation: !!sel.skillIsolation,
+ skills: sel.skills,
+ mcp: sel.mcp,
+ plugins: sel.plugins,
+ }
+ }
 
-    // 重新拉取会话/预设/隔离状态 (apply 后调用, 避免本地快照过期导致 base 回落到旧 red-iso 预设)
-    async function refreshState() {
-      const lr = await ipcRenderer.invoke('isolation-list')
-      if (!lr.ok) return
-      sessions = lr.sessions; presets = lr.presets; state = lr.state || {}
-      if (current) {
-        const fresh = sessions.find((s) => s.sessionId === current.sessionId)
-        if (fresh) current = fresh
-      }
-      renderSessions()
-      renderLockHint()
-    }
+ // 重新拉取会话/预设/隔离状态 (apply 后调用, 避免本地快照过期导致 base 回落到旧 red-iso 预设)
+ async function refreshState() {
+ const lr = await ipcRenderer.invoke('isolation-list')
+ if (!lr.ok) return
+ sessions = lr.sessions; presets = lr.presets; state = lr.state || {}
+ if (current) {
+ const fresh = sessions.find((s) => s.sessionId === current.sessionId)
+ if (fresh) current = fresh
+ }
+ renderSessions()
+ renderLockHint()
+ }
 
-    $('applyBtn').onclick = async () => {
-      setStatus('正在应用…')
-      const r = await ipcRenderer.invoke('isolation-apply', collectReq())
-      if (r.ok) {
-        const applied = r.presetId ? (r.reset === true ? '重置为 ' + sel.base : r.presetId) : '基础预设'
-        setStatus('✅ 已应用到该会话：' + applied
-          + (r.skillMissing && r.skillMissing.length ? '\n⚠ 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''))
-        await refreshState()
-      } else if (r.locked) {
-        setStatus('🔒 会话已有内容，DSH 不允许中途切换预设。\n隔离配置已保存：新建会话时生效。\n' + r.error, true)
-        await refreshState()
-      } else {
-        setStatus('❌ ' + (r.error || '应用失败')
-          + (r.skillMissing && r.skillMissing.length ? '\n⚠ 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''), true)
-      }
-    }
+ $('applyBtn').onclick = async () => {
+ setStatus('正在应用…')
+ const r = await ipcRenderer.invoke('isolation-apply', collectReq())
+ if (r.ok) {
+ const applied = r.presetId ? (r.reset === true ? '重置为 ' + sel.base : r.presetId) : '基础预设'
+ setStatus('已应用到该会话：' + applied
+ + (r.skillMissing && r.skillMissing.length ? '\n警告: 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''))
+ await refreshState()
+ } else if (r.locked) {
+ setStatus('会话已有内容，DSH 不允许中途切换预设。\n隔离配置已保存：新建会话时生效。\n' + r.error, true)
+ await refreshState()
+ } else {
+ setStatus('失败: ' + (r.error || '应用失败')
+ + (r.skillMissing && r.skillMissing.length ? '\n警告: 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''), true)
+ }
+ }
 
-    $('newBtn').onclick = async () => {
-      setStatus('正在新建会话…')
-      const req = collectReq()
-      delete req.sessionId
-      const r = await ipcRenderer.invoke('isolation-new-session', req)
-      if (r.ok) {
-        setStatus('✅ 已新建会话 ' + r.sessionId + '（' + (r.presetId || sel.base) + '）。\n' + (r.skillMissing && r.skillMissing.length ? '⚠ 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''))
-        const lr = await ipcRenderer.invoke('isolation-list')
-        if (lr.ok) { sessions = lr.sessions; presets = lr.presets; state = lr.state || {} }
-        renderSessions()
-        selectSession(r.sessionId)
-      } else {
-        setStatus('❌ ' + (r.error || '创建失败'), true)
-      }
-    }
+ $('newBtn').onclick = async () => {
+ setStatus('正在新建会话…')
+ const req = collectReq()
+ delete req.sessionId
+ const r = await ipcRenderer.invoke('isolation-new-session', req)
+ if (r.ok) {
+ setStatus('已新建会话 ' + r.sessionId + '（' + (r.presetId || sel.base) + '）。\n' + (r.skillMissing && r.skillMissing.length ? '警告: 未找到的技能（已跳过）: ' + r.skillMissing.join(', ') : ''))
+ const lr = await ipcRenderer.invoke('isolation-list')
+ if (lr.ok) { sessions = lr.sessions; presets = lr.presets; state = lr.state || {} }
+ renderSessions()
+ selectSession(r.sessionId)
+ } else {
+ setStatus('失败: ' + (r.error || '创建失败'), true)
+ }
+ }
 
-    // ---- 初始化 ----
-    async function load() {
-      setStatus('加载中…')
-      const [lr, pc, mr] = await Promise.all([
-        ipcRenderer.invoke('isolation-list'),
-        ipcRenderer.invoke('isolation-plugin-catalog'),
-        ipcRenderer.invoke('isolation-mcp-list'),
-      ])
-      if (lr.ok) { sessions = lr.sessions; presets = lr.presets; state = lr.state || {} }
-      if (pc.ok) pluginCatalog = pc.plugins || []
-      if (mr.ok) mcpServers = mr.servers || []
-      renderSessions()
-      renderMcp()
-      renderPlugins()
-      resetMcpForm()
-      // 默认选中一个空白会话（可立即应用）或第一个
-      const target = sessions.find((s) => s.blank) || sessions[0]
-      if (target) await selectSession(target.sessionId)
-      setStatus('')
-    }
+ // ---- 初始化 ----
+ async function load() {
+ setStatus('加载中…')
+ const [lr, pc, mr] = await Promise.all([
+ ipcRenderer.invoke('isolation-list'),
+ ipcRenderer.invoke('isolation-plugin-catalog'),
+ ipcRenderer.invoke('isolation-mcp-list'),
+ ])
+ if (lr.ok) { sessions = lr.sessions; presets = lr.presets; state = lr.state || {} }
+ if (pc.ok) pluginCatalog = pc.plugins || []
+ if (mr.ok) mcpServers = mr.servers || []
+ renderSessions()
+ renderMcp()
+ renderPlugins()
+ resetMcpForm()
+ // 默认选中一个空白会话（可立即应用）或第一个
+ const target = sessions.find((s) => s.blank) || sessions[0]
+ if (target) await selectSession(target.sessionId)
+ setStatus('')
+ }
 
-    load()
-  </script>
+ load()
+ </script>
 </body>
 </html>

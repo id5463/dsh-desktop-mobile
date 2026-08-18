@@ -4,186 +4,158 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #161b16; color: #e0e0e0; padding: 16px 18px; height: 100vh; display: flex; flex-direction: column;
-  }
-  h1 { font-size: 17px; color: #fff; }
-  .subtitle { font-size: 12px; color: #9aaa92; margin-top: 3px; line-height: 1.5; }
-  .badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; }
-  .badge.green { background: #143d1f; color: #81c784; }
-  .badge.gray { background: #3a3f5c; color: #a0a0b0; }
-  .badge.red { background: #5c1616; color: #ffb4b4; }
-
-  .strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .chip {
-    background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 8px; padding: 6px 12px;
-    font-size: 11.5px; color: #c5d5c5; display: flex; align-items: center; gap: 6px;
-  }
-  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #81c784; }
-  .chip .dot.off { background: #ef5350; }
-
-  .rescue-box { background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 10px; padding: 12px; }
-  .rescue-box .row { display: flex; gap: 8px; align-items: flex-end; }
-  textarea {
-    flex: 1; min-height: 44px; max-height: 110px; resize: vertical; padding: 9px 11px;
-    border-radius: 8px; border: 1px solid #2c3d2e; background: #141a15; color: #fff;
-    font-size: 12.5px; font-family: inherit; outline: none;
-  }
-  button {
-    border: none; border-radius: 8px; padding: 9px 16px; font-size: 12.5px; color: #fff;
-    cursor: pointer; background: #28a745; font-weight: 600; white-space: nowrap;
-  }
-  button:disabled { opacity: 0.5; cursor: default; }
-  button.secondary { background: #2c3d2e; font-weight: 400; }
-  button.danger { background: #dc3545; }
-  button.small { padding: 4px 10px; font-size: 11px; border-radius: 6px; font-weight: 400; }
-  .hint { font-size: 11px; color: #8aa08a; margin-top: 7px; line-height: 1.5; }
-
-  .toolbar { display: flex; gap: 6px; margin: 10px 0 8px; flex-wrap: wrap; }
-
-  .out {
-    flex: 1; background: #0d120e; border-radius: 8px; padding: 10px 12px; font-family: monospace;
-    font-size: 11.5px; color: #9fd3a3; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
-    min-height: 120px; border: 1px solid #22301f;
-  }
-  .status { margin-top: 8px; font-size: 12px; color: #81c784; min-height: 16px; }
-  .status.err { color: #ef9a9a; }
-  .status.busy { color: #ffd54f; }
-
-  .backups { margin-top: 10px; }
-  .backups h3 { font-size: 12px; color: #9aaa92; margin-bottom: 6px; }
-  .bk {
-    background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 8px; padding: 7px 11px;
-    margin-bottom: 6px; display: flex; align-items: center; gap: 10px; font-size: 11.5px;
-  }
-  .bk .info { flex: 1; }
-  .bk .t { color: #c5d5c5; }
-  .bk .m { color: #8aa08a; font-size: 10.5px; margin-top: 2px; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ background: #161b16; color: #e0e0e0; padding: 16px 18px; height: 100vh; display: flex; flex-direction: column;
+ }
+ h1 { font-size: 17px; color: #fff; }.subtitle { font-size: 12px; color: #9aaa92; margin-top: 3px; line-height: 1.5; }.badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; }.badge.green { background: #143d1f; color: #81c784; }.badge.gray { background: #3a3f5c; color: #a0a0b0; }.badge.red { background: #5c1616; color: #ffb4b4; }.strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }.chip {
+ background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 8px; padding: 6px 12px;
+ font-size: 11.5px; color: #c5d5c5; display: flex; align-items: center; gap: 6px;
+ }.chip.dot { width: 7px; height: 7px; border-radius: 50%; background: #81c784; }.chip.dot.off { background: #ef5350; }.rescue-box { background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 10px; padding: 12px; }.rescue-box.row { display: flex; gap: 8px; align-items: flex-end; }
+ textarea {
+ flex: 1; min-height: 44px; max-height: 110px; resize: vertical; padding: 9px 11px;
+ border-radius: 8px; border: 1px solid #2c3d2e; background: #141a15; color: #fff;
+ font-size: 12.5px; font-family: inherit; outline: none;
+ }
+ button {
+ border: none; border-radius: 8px; padding: 9px 16px; font-size: 12.5px; color: #fff;
+ cursor: pointer; background: #28a745; font-weight: 600; white-space: nowrap;
+ }
+ button:disabled { opacity: 0.5; cursor: default; }
+ button.secondary { background: #2c3d2e; font-weight: 400; }
+ button.danger { background: #dc3545; }
+ button.small { padding: 4px 10px; font-size: 11px; border-radius: 6px; font-weight: 400; }.hint { font-size: 11px; color: #8aa08a; margin-top: 7px; line-height: 1.5; }.toolbar { display: flex; gap: 6px; margin: 10px 0 8px; flex-wrap: wrap; }.out {
+ flex: 1; background: #0d120e; border-radius: 8px; padding: 10px 12px; font-family: monospace;
+ font-size: 11.5px; color: #9fd3a3; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+ min-height: 120px; border: 1px solid #22301f;
+ }.status { margin-top: 8px; font-size: 12px; color: #81c784; min-height: 16px; }.status.err { color: #ef9a9a; }.status.busy { color: #ffd54f; }.backups { margin-top: 10px; }.backups h3 { font-size: 12px; color: #9aaa92; margin-bottom: 6px; }.bk {
+ background: #1f2a20; border: 1px solid #2c3d2e; border-radius: 8px; padding: 7px 11px;
+ margin-bottom: 6px; display: flex; align-items: center; gap: 10px; font-size: 11.5px;
+ }.bk.info { flex: 1; }.bk.t { color: #c5d5c5; }.bk.m { color: #8aa08a; font-size: 10.5px; margin-top: 2px; }
 </style>
 </head>
 <body>
-  <h1>🛟 守护者 / Guardian <span class="badge green">dshd Green v0.3</span></h1>
-  <p class="subtitle">极简模式 (shell + 文件编辑) 套一个<b>完全隔离的救援 agent</b> —— 独立进程、独立 DSH_HOME，不依赖主 DSH 运行。仅在你点击时启动。</p>
+ <h1>守护者 / Guardian <span class="badge green">dshd Green v0.3</span></h1>
+ <p class="subtitle">极简模式 (shell + 文件编辑) 套一个<b>完全隔离的救援 agent</b>—— 独立进程、独立 DSH_HOME，不依赖主 DSH 运行。仅在你点击时启动。</p>
 
-  <div class="strip">
-    <span class="chip"><span class="dot" id="stDot"></span><span id="stText">DSH …</span></span>
-    <span class="chip">🔑 <span id="keyText">…</span></span>
-    <span class="chip">💾 <span id="bkText">…</span></span>
-    <button class="small secondary" id="refreshStrip">🔄 刷新</button>
-  </div>
+ <div class="strip">
+ <span class="chip"><span class="dot" id="stDot"></span><span id="stText">DSH …</span></span>
+ <span class="chip"> <span id="keyText">…</span></span>
+ <span class="chip"> <span id="bkText">…</span></span>
+ <button class="small secondary" id="refreshStrip">刷新</button>
+ </div>
 
-  <div class="rescue-box">
-    <div class="row">
-      <textarea id="problem" placeholder="描述 DSH 出了什么问题（可留空 = 只做一次只读健康检查）…"></textarea>
-      <button id="rescueBtn">🚀 启动救援 agent</button>
-    </div>
-    <div class="hint">救援 agent 将：只读检查主 DSH 配置/日志/进程 → 按你的描述执行最小修复（改文件前先备份）→ 平实报告。可随时在输出区继续看它的工作过程。</div>
-  </div>
+ <div class="rescue-box">
+ <div class="row">
+ <textarea id="problem" placeholder="描述 DSH 出了什么问题（可留空 = 只做一次只读健康检查）…"></textarea>
+ <button id="rescueBtn">启动救援 agent</button>
+ </div>
+ <div class="hint">救援 agent 将：只读检查主 DSH 配置/日志/进程 → 按你的描述执行最小修复（改文件前先备份）→ 平实报告。可随时在输出区继续看它的工作过程。</div>
+ </div>
 
-  <div class="toolbar">
-    <button class="secondary small" id="doctorBtn">🏥 健康检查</button>
-    <button class="secondary small" id="statusBtn">📡 状态</button>
-    <button class="secondary small" id="keyBtn">🔑 识别 Key</button>
-    <button class="secondary small" id="backupBtn">💾 立即备份</button>
-    <button class="secondary small" id="logBtn">📋 日志</button>
-    <button class="secondary small" id="clearBtn">🧹 清空</button>
-  </div>
+ <div class="toolbar">
+ <button class="secondary small" id="doctorBtn">健康检查</button>
+ <button class="secondary small" id="statusBtn">状态</button>
+ <button class="secondary small" id="keyBtn">识别 Key</button>
+ <button class="secondary small" id="backupBtn">立即备份</button>
+ <button class="secondary small" id="logBtn">日志</button>
+ <button class="secondary small" id="clearBtn">清空</button>
+ </div>
 
-  <div class="out" id="out">（点「🚀 启动救援 agent」或上方辅助按钮开始）</div>
-  <div class="status" id="status"></div>
+ <div class="out" id="out">（点「 启动救援 agent」或上方辅助按钮开始）</div>
+ <div class="status" id="status"></div>
 
-  <div class="backups" id="backups" style="display:none">
-    <h3>配置备份 / Backups（恢复前会自动再备份一次当前状态）</h3>
-    <div id="bkList"></div>
-  </div>
+ <div class="backups" id="backups" style="display:none">
+ <h3>配置备份 / Backups（恢复前会自动再备份一次当前状态）</h3>
+ <div id="bkList"></div>
+ </div>
 
-  <script>
-    const { ipcRenderer } = require('electron')
-    const $ = (id) => document.getElementById(id)
-    const out = $('out')
-    const statusEl = $('status')
-    let running = false
+ <script>
+ const { ipcRenderer } = require('electron')
+ const $ = (id) => document.getElementById(id)
+ const out = $('out')
+ const statusEl = $('status')
+ let running = false
 
-    function setStatus(t, cls) { statusEl.textContent = t; statusEl.className = 'status' + (cls ? ' ' + cls : '') }
-    function appendOut(t) {
-      const lines = (out.textContent + t).split('\n')
-      out.textContent = lines.slice(-400).join('\n')
-      out.scrollTop = out.scrollHeight
-    }
+ function setStatus(t, cls) { statusEl.textContent = t; statusEl.className = 'status' + (cls ? ' ' + cls : '') }
+ function appendOut(t) {
+ const lines = (out.textContent + t).split('\n')
+ out.textContent = lines.slice(-400).join('\n')
+ out.scrollTop = out.scrollHeight
+ }
 
-    async function run(args) {
-      if (running) { setStatus('已有任务在运行…', 'busy'); return }
-      running = true
-      $('rescueBtn').disabled = true
-      out.textContent = ''
-      setStatus('运行中…', 'busy')
-      const r = await ipcRenderer.invoke('guardian-run', args)
-      if (r && r.output && !out.textContent.includes('运行中')) { /* 兜底 */ }
-      setStatus(r && r.ok ? '✅ 完成' : '❌ 退出码 ' + (r && r.code) + (r && r.error ? ' · ' + r.error : ''), r && r.ok ? '' : 'err')
-      running = false
-      $('rescueBtn').disabled = false
-      refreshStrip()
-    }
+ async function run(args) {
+ if (running) { setStatus('已有任务在运行…', 'busy'); return }
+ running = true
+ $('rescueBtn').disabled = true
+ out.textContent = ''
+ setStatus('运行中…', 'busy')
+ const r = await ipcRenderer.invoke('guardian-run', args)
+ if (r && r.output && !out.textContent.includes('运行中')) { /* 兜底 */ }
+ setStatus(r && r.ok ? '完成' : '退出码 ' + (r && r.code) + (r && r.error ? ' · ' + r.error : ''), r && r.ok ? '' : 'err')
+ running = false
+ $('rescueBtn').disabled = false
+ refreshStrip()
+ }
 
-    async function runJson(args) {
-      const r = await ipcRenderer.invoke('guardian-json', args)
-      return r && r.ok ? r.json : null
-    }
+ async function runJson(args) {
+ const r = await ipcRenderer.invoke('guardian-json', args)
+ return r && r.ok ? r.json : null
+ }
 
-    async function refreshStrip() {
-      const [st, key, bk] = await Promise.all([
-        runJson(['status']), runJson(['key']), runJson(['list']),
-      ])
-      const dot = $('stDot')
-      if (st) {
-        dot.className = 'dot' + (st.online ? '' : ' off')
-        $('stText').textContent = st.online
-          ? ('DSH 在线 · ' + st.total + ' 会话 · ' + st.running + ' 运行中')
-          : ('DSH 离线 · ' + (st.reason || '') )
-      } else { dot.className = 'dot off'; $('stText').textContent = 'DSH 不可达' }
-      $('keyText').textContent = key ? (key.found ? 'Key ' + key.masked : '无 Key') : '…'
-      $('bkText').textContent = bk ? (bk.backups.length + ' 份备份') : '…'
-      renderBackups(bk)
-    }
+ async function refreshStrip() {
+ const [st, key, bk] = await Promise.all([
+ runJson(['status']), runJson(['key']), runJson(['list']),
+ ])
+ const dot = $('stDot')
+ if (st) {
+ dot.className = 'dot' + (st.online ? '' : ' off')
+ $('stText').textContent = st.online
+ ? ('DSH 在线 · ' + st.total + ' 会话 · ' + st.running + ' 运行中')
+ : ('DSH 离线 · ' + (st.reason || ''))
+ } else { dot.className = 'dot off'; $('stText').textContent = 'DSH 不可达' }
+ $('keyText').textContent = key ? (key.found ? 'Key ' + key.masked : '无 Key') : '…'
+ $('bkText').textContent = bk ? (bk.backups.length + ' 份备份') : '…'
+ renderBackups(bk)
+ }
 
-    function renderBackups(bk) {
-      const box = $('backups')
-      const list = $('bkList')
-      if (!bk || !bk.backups || !bk.backups.length) { box.style.display = 'none'; return }
-      box.style.display = 'block'
-      list.innerHTML = bk.backups.map((b) => {
-        const files = b.files + ' 个文件' + (b.sessionCount != null ? ' · 会话 ' + b.sessionCount : '')
-        return '<div class="bk"><div class="info"><div class="t">' + (b.createdAt || b.dir) + '</div>'
-          + '<div class="m">' + files + ' · ' + b.dir + '</div></div>'
-          + '<button class="small danger bk-restore" data-dir="' + b.dir + '">恢复</button></div>'
-      }).join('')
-      list.querySelectorAll('.bk-restore').forEach((btn) => {
-        btn.onclick = async () => {
-          if (!confirm('从备份「' + btn.dataset.dir + '」恢复配置？\n\n恢复前会自动再备份一次当前状态。恢复后需重启 DSH 生效。')) return
-          setStatus('正在恢复…', 'busy')
-          out.textContent = ''
-          const r = await ipcRenderer.invoke('guardian-run', ['restore', btn.dataset.dir, '--yes'])
-          setStatus(r && r.ok ? '✅ 已恢复，建议重启 DSH 生效' : '❌ 恢复失败', r && r.ok ? '' : 'err')
-          refreshStrip()
-        }
-      })
-    }
+ function renderBackups(bk) {
+ const box = $('backups')
+ const list = $('bkList')
+ if (!bk || !bk.backups || !bk.backups.length) { box.style.display = 'none'; return }
+ box.style.display = 'block'
+ list.innerHTML = bk.backups.map((b) => {
+ const files = b.files + ' 个文件' + (b.sessionCount != null ? ' · 会话 ' + b.sessionCount : '')
+ return '<div class="bk"><div class="info"><div class="t">' + (b.createdAt || b.dir) + '</div>'
+ + '<div class="m">' + files + ' · ' + b.dir + '</div></div>'
+ + '<button class="small danger bk-restore" data-dir="' + b.dir + '">恢复</button></div>'
+ }).join('')
+ list.querySelectorAll('.bk-restore').forEach((btn) => {
+ btn.onclick = async () => {
+ if (!confirm('从备份「' + btn.dataset.dir + '」恢复配置？\n\n恢复前会自动再备份一次当前状态。恢复后需重启 DSH 生效。')) return
+ setStatus('正在恢复…', 'busy')
+ out.textContent = ''
+ const r = await ipcRenderer.invoke('guardian-run', ['restore', btn.dataset.dir, '--yes'])
+ setStatus(r && r.ok ? '已恢复，建议重启 DSH 生效' : '恢复失败', r && r.ok ? '' : 'err')
+ refreshStrip()
+ }
+ })
+ }
 
-    // 事件
-    $('rescueBtn').onclick = () => run(['rescue', $('problem').value.trim()])
-    $('doctorBtn').onclick = () => run(['doctor'])
-    $('statusBtn').onclick = () => run(['status'])
-    $('keyBtn').onclick = () => run(['key'])
-    $('backupBtn').onclick = () => run(['backup'])
-    $('logBtn').onclick = () => run(['log', '--tail', '60'])
-    $('clearBtn').onclick = () => { out.textContent = '' }
-    $('refreshStrip').onclick = refreshStrip
+ // 事件
+ $('rescueBtn').onclick = () => run(['rescue', $('problem').value.trim()])
+ $('doctorBtn').onclick = () => run(['doctor'])
+ $('statusBtn').onclick = () => run(['status'])
+ $('keyBtn').onclick = () => run(['key'])
+ $('backupBtn').onclick = () => run(['backup'])
+ $('logBtn').onclick = () => run(['log', '--tail', '60'])
+ $('clearBtn').onclick = () => { out.textContent = '' }
+ $('refreshStrip').onclick = refreshStrip
 
-    ipcRenderer.on('guardian-line', (_e, line) => { if (line && line.trim()) appendOut(line + '\n') })
+ ipcRenderer.on('guardian-line', (_e, line) => { if (line && line.trim()) appendOut(line + '\n') })
 
-    refreshStrip()
-  </script>
+ refreshStrip()
+ </script>
 </body>
 </html>

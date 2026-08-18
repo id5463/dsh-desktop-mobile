@@ -4,155 +4,138 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1c1a12; color: #e8e2d0; padding: 16px 18px; height: 100vh; display: flex; flex-direction: column;
-  }
-  h1 { font-size: 17px; color: #fff; }
-  .subtitle { font-size: 12px; color: #b3a87a; margin-top: 3px; line-height: 1.5; }
-  .badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; background: #6d5a00; color: #ffe082; }
-  .strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .chip { background: #26230f; border: 1px solid #4a4218; border-radius: 8px; padding: 6px 12px; font-size: 11.5px; color: #d8cf9e; display: flex; align-items: center; gap: 6px; }
-  .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: #ffe082; }
-  .panel { background: #26230f; border: 1px solid #4a4218; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
-  .panel h3 { font-size: 12px; color: #d8cf9e; margin-bottom: 8px; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  input { flex: 1; min-width: 160px; padding: 8px 10px; border-radius: 8px; border: 1px solid #4a4218; background: #14120a; color: #fff; font-size: 12.5px; outline: none; }
-  button { border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; color: #fff; cursor: pointer; background: #b8860b; font-weight: 600; }
-  button:disabled { opacity: 0.5; cursor: default; }
-  button.secondary { background: #4a4218; font-weight: 400; }
-  button.small { padding: 4px 10px; font-size: 11px; border-radius: 6px; font-weight: 400; }
-  .hint { font-size: 11px; color: #9a9060; margin-top: 6px; line-height: 1.5; }
-  .out { flex: 1; background: #0f0d06; border-radius: 8px; padding: 10px 12px; font-family: monospace; font-size: 11.5px; color: #e6d88a; overflow-y: auto; white-space: pre-wrap; word-break: break-all; min-height: 90px; border: 1px solid #3a3310; }
-  .status { margin-top: 8px; font-size: 12px; color: #e6d88a; min-height: 16px; }
-  .status.err { color: #ef9a9a; }
-  .status.busy { color: #ffd54f; }
-  .item { background: #1f1c0c; border: 1px solid #3a3310; border-radius: 8px; padding: 8px 11px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
-  .item .info { flex: 1; }
-  .item .t { color: #fff; }
-  .item .m { color: #9a9060; font-size: 10.5px; margin-top: 2px; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+ body {
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+ background: #1c1a12; color: #e8e2d0; padding: 16px 18px; height: 100vh; display: flex; flex-direction: column;
+ }
+ h1 { font-size: 17px; color: #fff; }.subtitle { font-size: 12px; color: #b3a87a; margin-top: 3px; line-height: 1.5; }.badge { font-size: 10px; padding: 1px 7px; border-radius: 9px; margin-right: 5px; display: inline-block; background: #6d5a00; color: #ffe082; }.strip { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }.chip { background: #26230f; border: 1px solid #4a4218; border-radius: 8px; padding: 6px 12px; font-size: 11.5px; color: #d8cf9e; display: flex; align-items: center; gap: 6px; }.chip.dot { width: 7px; height: 7px; border-radius: 50%; background: #ffe082; }.panel { background: #26230f; border: 1px solid #4a4218; border-radius: 10px; padding: 12px; margin-bottom: 10px; }.panel h3 { font-size: 12px; color: #d8cf9e; margin-bottom: 8px; }.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+ input { flex: 1; min-width: 160px; padding: 8px 10px; border-radius: 8px; border: 1px solid #4a4218; background: #14120a; color: #fff; font-size: 12.5px; outline: none; }
+ button { border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; color: #fff; cursor: pointer; background: #b8860b; font-weight: 600; }
+ button:disabled { opacity: 0.5; cursor: default; }
+ button.secondary { background: #4a4218; font-weight: 400; }
+ button.small { padding: 4px 10px; font-size: 11px; border-radius: 6px; font-weight: 400; }.hint { font-size: 11px; color: #9a9060; margin-top: 6px; line-height: 1.5; }.out { flex: 1; background: #0f0d06; border-radius: 8px; padding: 10px 12px; font-family: monospace; font-size: 11.5px; color: #e6d88a; overflow-y: auto; white-space: pre-wrap; word-break: break-all; min-height: 90px; border: 1px solid #3a3310; }.status { margin-top: 8px; font-size: 12px; color: #e6d88a; min-height: 16px; }.status.err { color: #ef9a9a; }.status.busy { color: #ffd54f; }.item { background: #1f1c0c; border: 1px solid #3a3310; border-radius: 8px; padding: 8px 11px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; font-size: 12px; }.item.info { flex: 1; }.item.t { color: #fff; }.item.m { color: #9a9060; font-size: 10.5px; margin-top: 2px; }
 </style>
 </head>
 <body>
-  <h1>🧳 整合包 <span class="badge">dshd Yellow</span></h1>
-  <p class="subtitle">把技能/插件/MCP/模式/模型/补丁/灵魂打成"只存引用"的发行清单，按需下载、哈希去重，加载成新会话或分叉。不碰 DSH 内部。</p>
+ <h1>整合包 <span class="badge">dshd Yellow</span></h1>
+ <p class="subtitle">把技能/插件/MCP/模式/模型/补丁/灵魂打成"只存引用"的发行清单，按需下载、哈希去重，加载成新会话或分叉。不碰 DSH 内部。</p>
 
-  <div class="strip">
-    <span class="chip">DSH <span id="dshVer">…</span></span>
-    <span class="chip">🧳 <span id="packCount">…</span></span>
-    <span class="chip">📦 技能 <span id="skillCount">…</span> · 🔌 <span id="mcpCount">…</span></span>
-    <button class="small secondary" id="refreshBtn">🔄 刷新</button>
-  </div>
+ <div class="strip">
+ <span class="chip">DSH <span id="dshVer">…</span></span>
+ <span class="chip"><span id="packCount">…</span></span>
+ <span class="chip">技能 <span id="skillCount">…</span>· <span id="mcpCount">…</span></span>
+ <button class="small secondary" id="refreshBtn">刷新</button>
+ </div>
 
-  <div class="panel">
-    <h3>🛬 加载整合包 → 新会话 / 分叉</h3>
-    <div class="row">
-      <input id="packPath" placeholder="选择一个 .dshpack 文件…（或点右边按钮选择）">
-      <button class="secondary" id="pickBtn">选择文件</button>
-      <input id="forkFrom" placeholder="分叉来源会话 id（可选，留空=新建会话）" style="flex:0.6;min-width:220px">
-      <button id="loadBtn">🚀 加载</button>
-    </div>
-    <div class="hint">加载 = 校验版本/协议 → 技能哈希去重下载 → 插件安装 → 模式/模型/补丁 → 派生预设 → 新会话。</div>
-  </div>
+ <div class="panel">
+ <h3>加载整合包 → 新会话 / 分叉</h3>
+ <div class="row">
+ <input id="packPath" placeholder="选择一个.dshpack 文件…（或点右边按钮选择）">
+ <button class="secondary" id="pickBtn">选择文件</button>
+ <input id="forkFrom" placeholder="分叉来源会话 id（可选，留空=新建会话）" style="flex:0.6;min-width:220px">
+ <button id="loadBtn">加载</button>
+ </div>
+ <div class="hint">加载 = 校验版本/协议 → 技能哈希去重下载 → 插件安装 → 模式/模型/补丁 → 派生预设 → 新会话。</div>
+ </div>
 
-  <div class="panel">
-    <h3>📦 打包 / 初始化</h3>
-    <div class="row">
-      <input id="packDir" placeholder="选择/输入包工作目录（含 dsh.json）…">
-      <button class="secondary" id="pickDirBtn">选择目录</button>
-      <button class="secondary" id="initBtn">✏️ 初始化骨架</button>
-      <button id="packBtn">🧩 打包</button>
-    </div>
-    <div class="hint">init 生成骨架（dsh.json/soul.md/models.json/plugins.json/patches.yaml/mcp.json/presets/），编辑后 pack 产出 .dshpack。</div>
-  </div>
+ <div class="panel">
+ <h3>打包 / 初始化</h3>
+ <div class="row">
+ <input id="packDir" placeholder="选择/输入包工作目录（含 dsh.json）…">
+ <button class="secondary" id="pickDirBtn">选择目录</button>
+ <button class="secondary" id="initBtn">初始化骨架</button>
+ <button id="packBtn">打包</button>
+ </div>
+ <div class="hint">init 生成骨架（dsh.json/soul.md/models.json/plugins.json/patches.yaml/mcp.json/presets/），编辑后 pack 产出.dshpack。</div>
+ </div>
 
-  <div class="out" id="out">（选择整合包加载，或打包工作目录）</div>
-  <div class="status" id="status"></div>
+ <div class="out" id="out">（选择整合包加载，或打包工作目录）</div>
+ <div class="status" id="status"></div>
 
-  <div class="panel" id="packs" style="display:none">
-    <h3>已安装 / 已加载（台账）</h3>
-    <div id="packList"></div>
-  </div>
+ <div class="panel" id="packs" style="display:none">
+ <h3>已安装 / 已加载（台账）</h3>
+ <div id="packList"></div>
+ </div>
 
-  <script>
-    const { ipcRenderer } = require('electron')
-    const $ = (id) => document.getElementById(id)
-    const out = $('out')
-    const statusEl = $('status')
-    let running = false
+ <script>
+ const { ipcRenderer } = require('electron')
+ const $ = (id) => document.getElementById(id)
+ const out = $('out')
+ const statusEl = $('status')
+ let running = false
 
-    function setStatus(t, cls) { statusEl.textContent = t; statusEl.className = 'status' + (cls ? ' ' + cls : '') }
-    function appendOut(t) {
-      const lines = (out.textContent + t).split('\n')
-      out.textContent = lines.slice(-400).join('\n')
-      out.scrollTop = out.scrollHeight
-    }
-    async function run(args) {
-      if (running) { setStatus('已有任务在运行…', 'busy'); return }
-      running = true
-      $('loadBtn').disabled = true; $('packBtn').disabled = true
-      out.textContent = ''
-      setStatus('运行中…', 'busy')
-      const r = await ipcRenderer.invoke('yellow-run', args)
-      setStatus(r && r.ok ? '✅ 完成' : '❌ 失败' + (r && r.error ? ' · ' + r.error : ''), r && r.ok ? '' : 'err')
-      running = false
-      $('loadBtn').disabled = false; $('packBtn').disabled = false
-      refresh()
-    }
-    async function json(args) {
-      const r = await ipcRenderer.invoke('yellow-json', args)
-      return r && r.ok ? r.json : null
-    }
+ function setStatus(t, cls) { statusEl.textContent = t; statusEl.className = 'status' + (cls ? ' ' + cls : '') }
+ function appendOut(t) {
+ const lines = (out.textContent + t).split('\n')
+ out.textContent = lines.slice(-400).join('\n')
+ out.scrollTop = out.scrollHeight
+ }
+ async function run(args) {
+ if (running) { setStatus('已有任务在运行…', 'busy'); return }
+ running = true
+ $('loadBtn').disabled = true; $('packBtn').disabled = true
+ out.textContent = ''
+ setStatus('运行中…', 'busy')
+ const r = await ipcRenderer.invoke('yellow-run', args)
+ setStatus(r && r.ok ? '完成' : '失败' + (r && r.error ? ' · ' + r.error : ''), r && r.ok ? '' : 'err')
+ running = false
+ $('loadBtn').disabled = false; $('packBtn').disabled = false
+ refresh()
+ }
+ async function json(args) {
+ const r = await ipcRenderer.invoke('yellow-json', args)
+ return r && r.ok ? r.json : null
+ }
 
-    async function refresh() {
-      const l = await json(['list'])
-      if (l) {
-        $('dshVer').textContent = l.dshVersion || '?'
-        $('packCount').textContent = (l.packs || []).length + ' 包'
-        $('skillCount').textContent = (l.skills || []).length
-        $('mcpCount').textContent = (l.mcp || []).length
-        renderPacks(l)
-      }
-    }
+ async function refresh() {
+ const l = await json(['list'])
+ if (l) {
+ $('dshVer').textContent = l.dshVersion || '?'
+ $('packCount').textContent = (l.packs || []).length + ' 包'
+ $('skillCount').textContent = (l.skills || []).length
+ $('mcpCount').textContent = (l.mcp || []).length
+ renderPacks(l)
+ }
+ }
 
-    function renderPacks(l) {
-      const box = $('packs')
-      const packs = l.packs || []
-      const skills = l.skills || []
-      const mcp = l.mcp || []
-      box.style.display = (packs.length || skills.length || mcp.length) ? 'block' : 'none'
-      const list = $('packList')
-      const rows = packs.map((p) => '<div class="item"><div class="info"><div class="t">🧳 ' + p.name + ' ' + p.versionId + ' <span style="color:#9a9060">[' + p.license + ']</span></div><div class="m">会话 ' + p.sessionId + ' · 预设 ' + p.presetId + '</div></div></div>')
-      if (skills.length) rows.push('<div class="item"><div class="info"><div class="t">📦 技能台账 ' + skills.length + ' 个（哈希去重）</div></div></div>')
-      if (mcp.length) rows.push('<div class="item"><div class="info"><div class="t">🔌 MCP 台账 ' + mcp.length + ' 个</div></div></div>')
-      list.innerHTML = rows.join('')
-    }
+ function renderPacks(l) {
+ const box = $('packs')
+ const packs = l.packs || []
+ const skills = l.skills || []
+ const mcp = l.mcp || []
+ box.style.display = (packs.length || skills.length || mcp.length) ? 'block' : 'none'
+ const list = $('packList')
+ const rows = packs.map((p) => '<div class="item"><div class="info"><div class="t">' + p.name + ' ' + p.versionId + ' <span style="color:#9a9060">[' + p.license + ']</span></div><div class="m">会话 ' + p.sessionId + ' · 预设 ' + p.presetId + '</div></div></div>')
+ if (skills.length) rows.push('<div class="item"><div class="info"><div class="t">技能台账 ' + skills.length + ' 个（哈希去重）</div></div></div>')
+ if (mcp.length) rows.push('<div class="item"><div class="info"><div class="t">MCP 台账 ' + mcp.length + ' 个</div></div></div>')
+ list.innerHTML = rows.join('')
+ }
 
-    $('pickBtn').onclick = async () => { const f = await ipcRenderer.invoke('yellow-pick-pack'); if (f) $('packPath').value = f }
-    $('pickDirBtn').onclick = async () => { const d = await ipcRenderer.invoke('yellow-pick-dir', '选择包工作目录'); if (d) $('packDir').value = d }
-    $('loadBtn').onclick = () => {
-      const pack = $('packPath').value.trim()
-      if (!pack) { setStatus('请选择整合包文件', true); return }
-      const fork = $('forkFrom').value.trim()
-      run(fork ? ['load', pack, '--fork-from', fork] : ['load', pack])
-    }
-    $('initBtn').onclick = async () => {
-      const d = $('packDir').value.trim() || await ipcRenderer.invoke('yellow-pick-dir', '选择/输入新包目录')
-      if (!d) return
-      $('packDir').value = d
-      run(['init', d])
-    }
-    $('packBtn').onclick = () => {
-      const d = $('packDir').value.trim()
-      if (!d) { setStatus('请选择包工作目录', true); return }
-      run(['pack', '--from', d])
-    }
-    $('refreshBtn').onclick = refresh
+ $('pickBtn').onclick = async () => { const f = await ipcRenderer.invoke('yellow-pick-pack'); if (f) $('packPath').value = f }
+ $('pickDirBtn').onclick = async () => { const d = await ipcRenderer.invoke('yellow-pick-dir', '选择包工作目录'); if (d) $('packDir').value = d }
+ $('loadBtn').onclick = () => {
+ const pack = $('packPath').value.trim()
+ if (!pack) { setStatus('请选择整合包文件', true); return }
+ const fork = $('forkFrom').value.trim()
+ run(fork ? ['load', pack, '--fork-from', fork] : ['load', pack])
+ }
+ $('initBtn').onclick = async () => {
+ const d = $('packDir').value.trim() || await ipcRenderer.invoke('yellow-pick-dir', '选择/输入新包目录')
+ if (!d) return
+ $('packDir').value = d
+ run(['init', d])
+ }
+ $('packBtn').onclick = () => {
+ const d = $('packDir').value.trim()
+ if (!d) { setStatus('请选择包工作目录', true); return }
+ run(['pack', '--from', d])
+ }
+ $('refreshBtn').onclick = refresh
 
-    ipcRenderer.on('yellow-line', (_e, line) => { if (line && line.trim()) appendOut(line + '\n') })
+ ipcRenderer.on('yellow-line', (_e, line) => { if (line && line.trim()) appendOut(line + '\n') })
 
-    refresh()
-  </script>
+ refresh()
+ </script>
 </body>
 </html>
