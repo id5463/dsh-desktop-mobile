@@ -102,6 +102,10 @@ const locales = {
     // 对话隔离
     isolation_title: '对话隔离',
     menu_isolation: '对话隔离...',
+
+    // 整合包 (Yellow)
+    yellow_title: '整合包 (dshd Yellow)',
+    menu_yellow: '整合包...',
   },
 
   en: {
@@ -192,6 +196,9 @@ const locales = {
 
     isolation_title: 'Conversation Isolation',
     menu_isolation: 'Conversation Isolation...',
+
+    yellow_title: 'Integration Packs (dshd Yellow)',
+    menu_yellow: 'Integration Packs...',
   },
 }
 

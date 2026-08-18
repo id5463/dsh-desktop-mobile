@@ -1754,6 +1754,80 @@ function createIsolationWindow() {
   return isolationWindow
 }
 
+// ====== 整合包 (内置 dshd Yellow) ======
+
+let yellowWindow = null
+
+/** 运行内置 dshd-yellow CLI (vendor 在 src/yellow), 返回输出 */
+function runYellow(args, stream) {
+  return new Promise((resolve) => {
+    const cli = path.join(__dirname, 'yellow', 'bin', 'dshd-yellow.js')
+    const env = { ...process.env, DSH_HOME: dshHome(), ELECTRON_RUN_AS_NODE: '1' }
+    try {
+      const libCli = path.join(__dirname, '..', '..', '..', 'apps', 'cli', 'lib', 'bin.js')
+      if (require('fs').existsSync(libCli)) env.DSH_YELLOW_DSH = 'node ' + libCli
+    } catch (e) { /* 默认 npx */ }
+    const child = spawn(process.execPath, [cli, ...args], { env, stdio: ['ignore', 'pipe', 'pipe'] })
+    let out = ''
+    const push = (t) => {
+      out += t
+      if (stream && yellowWindow && !yellowWindow.isDestroyed()) yellowWindow.webContents.send('yellow-line', t)
+    }
+    child.stdout.on('data', (d) => push(d.toString()))
+    child.stderr.on('data', (d) => push(d.toString()))
+    child.on('error', (e) => resolve({ ok: false, error: e.message, output: out }))
+    child.on('exit', (code) => resolve({ ok: code === 0, code, output: out }))
+  })
+}
+
+ipcMain.handle('yellow-run', async (_e, args) => runYellow(Array.isArray(args) ? args : String(args || 'list').split(' '), true))
+
+ipcMain.handle('yellow-json', async (_e, args) => {
+  const r = await runYellow([...(Array.isArray(args) ? args : ['list']), '--json'], false)
+  try {
+    const whole = r.output.trim()
+    try { return { ok: true, json: JSON.parse(whole) } }
+    catch (e) {
+      const lines = whole.split(/\r?\n/).filter(Boolean)
+      return { ok: true, json: JSON.parse(lines[lines.length - 1]) }
+    }
+  } catch (e) {
+    return { ok: false, error: r.error || 'JSON 解析失败', output: r.output }
+  }
+})
+
+ipcMain.handle('yellow-pick-pack', async () => {
+  const r = await dialog.showOpenDialog(yellowWindow || mainWindow, {
+    title: t('yellow_title') + ' — 选择整合包',
+    filters: [{ name: 'dshd 整合包', extensions: ['dshpack', 'zip'] }, { name: '所有文件', extensions: ['*'] }],
+    properties: ['openFile'],
+  })
+  return r.canceled || !r.filePaths.length ? null : r.filePaths[0]
+})
+
+ipcMain.handle('yellow-pick-dir', async (_e, title) => {
+  const r = await dialog.showOpenDialog(yellowWindow || mainWindow, {
+    title: title || t('yellow_title') + ' — 选择目录',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  return r.canceled || !r.filePaths.length ? null : r.filePaths[0]
+})
+
+/** 整合包窗口 */
+function createYellowWindow() {
+  yellowWindow = new BrowserWindow({
+    width: 860,
+    height: 680,
+    resizable: true,
+    title: t('yellow_title'),
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    parent: mainWindow,
+  })
+  yellowWindow.loadFile(path.join(__dirname, 'yellow.html'), { query: { lang } })
+  yellowWindow.on('closed', () => { yellowWindow = null })
+  return yellowWindow
+}
+
 // ====== 安全网关窗口 (状态/启停/文件传输入口) ======
 
 let gatewayWindow = null
@@ -1967,6 +2041,7 @@ ipcMain.on('shell-action', (event, which) => {
     case 'providers': createProviderWindow(); break
     case 'market': createMarketWindow(); break
     case 'isolation': createIsolationWindow(); break
+    case 'yellow': createYellowWindow(); break
     case 'extras': createMarketWindow(); break // 扩展管理 = 市场(已安装视图)
     case 'gateway': createGatewayWindow(); break
     case 'guardian': createGuardianWindow(); break
@@ -2103,6 +2178,7 @@ function buildMenu() {
         { label: t('menu_providers'), accelerator: 'CmdOrCtrl+P', click: () => createProviderWindow() },
         { label: t('menu_plugins'), accelerator: 'CmdOrCtrl+Shift+P', click: () => createMarketWindow() },
         { label: t('menu_isolation'), accelerator: 'CmdOrCtrl+Shift+I', click: () => createIsolationWindow() },
+        { label: t('menu_yellow'), accelerator: 'CmdOrCtrl+Shift+Y', click: () => createYellowWindow() },
         { type: 'separator' },
         { label: t('menu_restart_server'), accelerator: 'CmdOrCtrl+Shift+R', click: () => restartDsh() },
         { type: 'separator' },

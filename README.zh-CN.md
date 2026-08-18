@@ -108,6 +108,7 @@ blue/  dshd Blue — Android 应用（Java WebView、本地代理、二维码扫
 | 插件市场——浏览 1200+ 社区插件，官方 CLI 一键安装 | [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) · [dsh-market](https://github.com/dsh-market/dsh-market) | **已实现**（菜单 → 插件市场） |
 | 对话隔离——按会话启停 技能 / MCP / 插件（会话级 preset 派生，空白会话立即生效，已有内容会话锁定并可用于新会话） | 复用 DSH preset / skill-filesystem / mcp-client 机制 | **已实现**（侧栏 → 对话隔离） |
 | 会话迁移导入——一键安装 dsh-claude-move，从 Claude Code / Codex / OpenCode / Hermes 迁移 | [dsh-claude-move](https://www.npmjs.com/package/dsh-claude-move) | **已实现**（侧栏 → 迁移导入） |
+| 整合包（dshd Yellow）——把技能/插件/MCP/模式/模型/补丁/灵魂打成"只存引用"的发行清单，按需下载、哈希去重，加载成新会话/分叉 | 独立项目 [id5463/dshd-yellow](https://github.com/id5463/dshd-yellow) | **已实现**（侧栏 → 整合包；Red 内嵌 Yellow） |
 | 安全加固——随机回环端口、沙箱、导航限制 | [dataelement/dsh-desktop](https://github.com/dataelement/dsh-desktop) | 计划中 |
 | PWA 模式——添加到主屏、离线壳、Web Push 推送、触屏手势 | [dsh-mobile-pwa](https://github.com/zylzyqzz/dsh-mobile-pwa) | 计划中 |
 | 纯 HTTP 来源（局域网）的 `crypto.randomUUID` polyfill | [dsh-web-lan-access](https://github.com/AcidGr/dsh-web-lan-access) | 计划中 |
